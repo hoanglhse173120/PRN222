@@ -1,0 +1,57 @@
+@model IEnumerable<DataAccessLayer.Models.Subject>
+@{
+    ViewData["Title"] = "Quản lý Môn học";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h2><i class="bi bi-book"></i> Quản lý Môn học</h2>
+    <a asp-action="Create" class="btn btn-primary">+ Thêm môn học</a>
+</div>
+
+@if (TempData["Success"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show" role="alert">
+        @TempData["Success"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+
+@if (!Model.Any())
+{
+    <div class="alert alert-info">Chưa có môn học nào. Hãy tạo môn học đầu tiên!</div>
+}
+else
+{
+    <div class="table-responsive">
+        <table class="table table-hover table-bordered align-middle">
+            <thead class="table-dark">
+                <tr>
+                    <th>#</th>
+                    <th>Tên môn học</th>
+                    <th>Mô tả</th>
+                    <th>Ngày tạo</th>
+                    <th style="width:160px">Hành động</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var s in Model)
+                {
+                    <tr>
+                        <td>@s.SubjectID</td>
+                        <td><strong>@s.SubjectName</strong></td>
+                        <td>@(s.Description ?? "—")</td>
+                        <td>@s.CreatedAt.ToString("dd/MM/yyyy")</td>
+                        <td>
+                            <a asp-action="Edit" asp-route-id="@s.SubjectID" class="btn btn-sm btn-outline-warning">Sửa</a>
+                            <form asp-action="Delete" asp-route-id="@s.SubjectID" method="post" class="d-inline"
+                                  onsubmit="return confirm('Xóa môn học sẽ xóa toàn bộ tài liệu liên quan. Xác nhận?')">
+                                @Html.AntiForgeryToken()
+                                <button type="submit" class="btn btn-sm btn-outline-danger">Xóa</button>
+                            </form>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+}

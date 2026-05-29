@@ -1,0 +1,126 @@
+@model PresentationLayer.ViewModels.DocumentIndexViewModel
+@{
+    ViewData["Title"] = "Quản lý Tài liệu";
+}
+
+<div class="d-flex justify-content-between align-items-center mb-3">
+    <h2>📁 Quản lý Tài liệu</h2>
+    <a asp-action="Upload" class="btn btn-primary">⬆ Upload tài liệu</a>
+</div>
+
+@if (TempData["Success"] != null)
+{
+    <div class="alert alert-success alert-dismissible fade show">
+        @TempData["Success"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+@if (TempData["Error"] != null)
+{
+    <div class="alert alert-danger alert-dismissible fade show">
+        ❌ @TempData["Error"]
+        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    </div>
+}
+
+@* Bộ lọc *@
+<div class="card mb-3">
+    <div class="card-body">
+        <form method="get" class="row g-2 align-items-end">
+            <div class="col-md-4">
+                <label class="form-label fw-bold">Môn học</label>
+                <select name="subjectId" class="form-select" onchange="this.form.submit()">
+                    <option value="">-- Tất cả môn học --</option>
+                    @foreach (var s in Model.Subjects)
+                    {
+                        <option value="@s.SubjectID" selected="@(Model.SelectedSubjectId == s.SubjectID)">
+                            @s.SubjectName
+                        </option>
+                    }
+                </select>
+            </div>
+            <div class="col-md-4">
+                <label class="form-label fw-bold">Trạng thái</label>
+                <select name="filter" class="form-select" onchange="this.form.submit()">
+                    <option value="all" selected="@(Model.Filter == "all")">Tất cả</option>
+                    <option value="indexed" selected="@(Model.Filter == "indexed")">✅ Đã Index</option>
+                    <option value="pending" selected="@(Model.Filter == "pending")">⏳ Chưa Index</option>
+                </select>
+            </div>
+        </form>
+    </div>
+</div>
+
+{{!-- Bảng tài liệu --}}
+@if (!Model.Documents.Any())
+{
+    <div class="alert alert-info">Không tìm thấy tài liệu nào.</div>
+}
+else
+{
+    <div class="table-responsive">
+        <table class="table table-hover table-bordered align-middle">
+            <thead class="table-dark">
+                <tr>
+                    <th>#</th>
+                    <th>Tên file</th>
+                    <th>Loại</th>
+                    <th>Môn học</th>
+                    <th>Kích thước</th>
+                    <th>Trạng thái</th>
+                    <th>Ngày upload</th>
+                    <th style="width:180px">Hành động</th>
+                </tr>
+            </thead>
+            <tbody>
+                @foreach (var doc in Model.Documents)
+                {
+                    <tr>
+                        <td>@doc.DocumentID</td>
+                        <td>
+                            <a href="@doc.FilePath" target="_blank" title="Xem file">
+                                📄 @doc.FileName
+                            </a>
+                        </td>
+                        <td><span class="badge bg-secondary">@doc.FileType</span></td>
+                        <td>@doc.Subject?.SubjectName</td>
+                        <td>@(doc.FileSizeKB.HasValue ? $"{doc.FileSizeKB:N0} KB" : "—")</td>
+                        <td>
+                            @if (doc.IsIndexed)
+                            {
+                                <span class="badge bg-success">✅ Đã Index</span>
+                            }
+                            else
+                            {
+                                <span class="badge bg-warning text-dark">⏳ Chờ Index</span>
+                            }
+                        </td>
+                        <td>@doc.UploadedAt.ToString("dd/MM/yyyy HH:mm")</td>
+                        <td>
+                            @if (!doc.IsIndexed)
+                            {
+                                <form asp-action="MarkIndexed" asp-route-id="@doc.DocumentID" method="post" class="d-inline">
+                                    @Html.AntiForgeryToken()
+                                    <button type="submit" class="btn btn-sm btn-success" title="Đánh dấu đã index">
+                                        ✅ Index
+                                    </button>
+                                </form>
+                            }
+                            <form asp-action="Delete" asp-route-id="@doc.DocumentID" method="post" class="d-inline"
+                                  onsubmit="return confirm('Xóa tài liệu này?')">
+                                @Html.AntiForgeryToken()
+                                <button type="submit" class="btn btn-sm btn-outline-danger">🗑 Xóa</button>
+                            </form>
+                        </td>
+                    </tr>
+                }
+            </tbody>
+        </table>
+    </div>
+
+    <p class="text-muted small">
+        Tổng: <strong>@Model.Documents.Count()</strong> tài liệu |
+        Đã Index: <strong>@Model.Documents.Count(d => d.IsIndexed)</strong> |
+        Chờ Index: <strong>@Model.Documents.Count(d => !d.IsIndexed)</strong>
+    </p>
+}

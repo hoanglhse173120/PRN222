@@ -1,0 +1,68 @@
+using DataAccessLayer.Models;
+using Microsoft.AspNetCore.Mvc;
+using ServiceLayer.Interfaces;
+
+namespace PresentationLayer.Controllers;
+
+public class SubjectController : Controller
+{
+    private readonly ISubjectService _subjectService;
+
+    public SubjectController(ISubjectService subjectService)
+    {
+        _subjectService = subjectService;
+    }
+
+    // GET: /Subject
+    public async Task<IActionResult> Index()
+    {
+        var subjects = await _subjectService.GetAllAsync();
+        return View(subjects);
+    }
+
+    // GET: /Subject/Create
+    public IActionResult Create() => View();
+
+    // POST: /Subject/Create
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> Create(Subject subject)
+    {
+        if (!ModelState.IsValid) return View(subject);
+
+        subject.CreatedAt = DateTime.Now;
+        await _subjectService.CreateAsync(subject);
+        TempData["Success"] = $"Đã tạo môn học \"{subject.SubjectName}\" thành công!";
+        return RedirectToAction(nameof(Index));
+    }
+
+    // GET: /Subject/Edit/5
+    public async Task<IActionResult> Edit(int id)
+    {
+        var subject = await _subjectService.GetByIdAsync(id);
+        if (subject == null) return NotFound();
+        return View(subject);
+    }
+
+    // POST: /Subject/Edit/5
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> Edit(Subject subject)
+    {
+        if (!ModelState.IsValid) return View(subject);
+
+        await _subjectService.UpdateAsync(subject);
+        TempData["Success"] = "Cập nhật môn học thành công!";
+        return RedirectToAction(nameof(Index));
+    }
+
+    // POST: /Subject/Delete/5
+    [HttpPost]
+    [ValidateAntiForgeryToken]
+    public async Task<IActionResult> Delete(int id)
+    {
+        await _subjectService.DeleteAsync(id);
+        TempData["Success"] = "Đã xóa môn học.";
+        return RedirectToAction(nameof(Index));
+    }
+}
