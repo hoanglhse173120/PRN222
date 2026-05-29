@@ -1,4 +1,4 @@
-using DataAccessLayer.Models;
+using DataAccessLayer.Entities;
 using DataAccessLayer.Repositories;
 using ServiceLayer.Interfaces;
 

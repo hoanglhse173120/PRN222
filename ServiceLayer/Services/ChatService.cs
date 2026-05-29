@@ -1,6 +1,8 @@
-using DataAccessLayer.Models;
+using DataAccessLayer.Entities;
 using DataAccessLayer.Repositories;
 using ServiceLayer.Interfaces;
+using ServiceLayer.DTOs;
+using System.Linq;
 
 namespace ServiceLayer.Services;
 
@@ -15,10 +17,13 @@ public class ChatService : IChatService
         _messageRepo = messageRepo;
     }
 
-    public async Task<IEnumerable<ChatSession>> GetAllSessionsAsync()
-        => await _sessionRepo.GetAllOrderedAsync();
+    public async Task<IEnumerable<ChatSessionDto>> GetAllSessionsAsync()
+    {
+        var sessions = await _sessionRepo.GetAllOrderedAsync();
+        return sessions.Select(MapSessionToDto);
+    }
 
-    public async Task<ChatSession> CreateSessionAsync(string? sessionName = null)
+    public async Task<ChatSessionDto> CreateSessionAsync(string? sessionName = null)
     {
         var session = new ChatSession
         {
@@ -27,13 +32,17 @@ public class ChatService : IChatService
         };
         await _sessionRepo.AddAsync(session);
         await _sessionRepo.SaveChangesAsync();
-        return session;
+        return MapSessionToDto(session);
     }
 
-    public async Task<ChatSession?> GetSessionWithMessagesAsync(int sessionId)
-        => await _sessionRepo.GetWithMessagesAsync(sessionId);
+    public async Task<ChatSessionDto?> GetSessionWithMessagesAsync(int sessionId)
+    {
+        var session = await _sessionRepo.GetWithMessagesAsync(sessionId);
+        if (session == null) return null;
+        return MapSessionToDto(session);
+    }
 
-    public async Task<ChatMessage> AddMessageAsync(int sessionId, string role, string messageText)
+    public async Task<ChatMessageDto> AddMessageAsync(int sessionId, string role, string messageText)
     {
         var message = new ChatMessage
         {
@@ -44,7 +53,30 @@ public class ChatService : IChatService
         };
         await _messageRepo.AddAsync(message);
         await _messageRepo.SaveChangesAsync();
-        return message;
+        return MapMessageToDto(message);
+    }
+
+    private ChatSessionDto MapSessionToDto(ChatSession session)
+    {
+        return new ChatSessionDto
+        {
+            SessionID = session.SessionID,
+            SessionName = session.SessionName,
+            CreatedAt = session.CreatedAt,
+            ChatMessages = session.ChatMessages?.Select(MapMessageToDto).ToList() ?? new List<ChatMessageDto>()
+        };
+    }
+
+    private ChatMessageDto MapMessageToDto(ChatMessage message)
+    {
+        return new ChatMessageDto
+        {
+            MessageID = message.MessageID,
+            SessionID = message.SessionID,
+            Role = message.Role,
+            MessageText = message.MessageText,
+            Timestamp = message.Timestamp
+        };
     }
 
     public async Task DeleteSessionAsync(int sessionId)

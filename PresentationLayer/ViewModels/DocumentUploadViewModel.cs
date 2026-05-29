@@ -1,4 +1,4 @@
-using DataAccessLayer.Models;
+using ServiceLayer.DTOs;
 using Microsoft.AspNetCore.Http;
 using System.ComponentModel.DataAnnotations;
 
@@ -12,5 +12,5 @@ public class DocumentUploadViewModel
     [Required(ErrorMessage = "Vui lòng chọn file")]
     public IFormFile File { get; set; } = null!;
 
-    public IEnumerable<Subject> Subjects { get; set; } = new List<Subject>();
+    public IEnumerable<SubjectDto> Subjects { get; set; } = new List<SubjectDto>();
 }

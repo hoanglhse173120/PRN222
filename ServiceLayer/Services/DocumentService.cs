@@ -1,9 +1,11 @@
-using DataAccessLayer.Models;
+using DataAccessLayer.Entities;
 using DataAccessLayer.Repositories;
 using ServiceLayer.Interfaces;
+using ServiceLayer.DTOs;
 using System.Text.Json;
 using System.Net.Http.Json;
 using System.Net.Http;
+using System.Linq;
 
 namespace ServiceLayer.Services;
 
@@ -29,14 +31,26 @@ public class DocumentService : IDocumentService
         _httpClientFactory = httpClientFactory;
     }
 
-    public async Task<IEnumerable<Document>> GetAllAsync() => await _repo.GetAllAsync();
+    public async Task<IEnumerable<DocumentDto>> GetAllAsync()
+    {
+        var entities = await _repo.GetAllAsync();
+        return entities.Select(MapToDto);
+    }
 
-    public async Task<IEnumerable<Document>> GetBySubjectAsync(int subjectId)
-        => await _repo.GetBySubjectAsync(subjectId);
+    public async Task<IEnumerable<DocumentDto>> GetBySubjectAsync(int subjectId)
+    {
+        var entities = await _repo.GetBySubjectAsync(subjectId);
+        return entities.Select(MapToDto);
+    }
 
-    public async Task<Document?> GetByIdAsync(int id) => await _repo.GetByIdAsync(id);
+    public async Task<DocumentDto?> GetByIdAsync(int id)
+    {
+        var doc = await _repo.GetByIdAsync(id);
+        if (doc == null) return null;
+        return MapToDto(doc);
+    }
 
-    public async Task<Document> UploadAsync(int subjectId, string fileName, string fileType, string filePath, long fileSizeKB)
+    public async Task<DocumentDto> UploadAsync(int subjectId, string fileName, string fileType, string filePath, long? fileSizeKB)
     {
         var doc = new Document
         {
@@ -50,7 +64,23 @@ public class DocumentService : IDocumentService
         };
         await _repo.AddAsync(doc);
         await _repo.SaveChangesAsync();
-        return doc;
+        return MapToDto(doc);
+    }
+
+    private DocumentDto MapToDto(Document doc)
+    {
+        return new DocumentDto
+        {
+            DocumentID = doc.DocumentID,
+            SubjectID = doc.SubjectID,
+            FileName = doc.FileName,
+            FileType = doc.FileType,
+            FilePath = doc.FilePath,
+            FileSizeKB = doc.FileSizeKB,
+            IsIndexed = doc.IsIndexed,
+            UploadedAt = doc.UploadedAt,
+            Subject = doc.Subject != null ? new SubjectDto { SubjectID = doc.Subject.SubjectID, SubjectName = doc.Subject.SubjectName } : null
+        };
     }
 
     public async Task MarkAsIndexedAsync(int documentId)

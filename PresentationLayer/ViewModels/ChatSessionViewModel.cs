@@ -1,9 +1,9 @@
-using DataAccessLayer.Models;
+using ServiceLayer.DTOs;
 
 namespace PresentationLayer.ViewModels;
 
 public class ChatSessionViewModel
 {
-    public ChatSession Session { get; set; } = null!;
+    public ChatSessionDto Session { get; set; } = null!;
     public string NewMessage { get; set; } = string.Empty;
 }

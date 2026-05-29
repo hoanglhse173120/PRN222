@@ -1,13 +1,13 @@
-using DataAccessLayer.Models;
+using ServiceLayer.DTOs;
 
 namespace ServiceLayer.Interfaces;
 
 public interface IDocumentService
 {
-    Task<IEnumerable<Document>> GetAllAsync();
-    Task<IEnumerable<Document>> GetBySubjectAsync(int subjectId);
-    Task<Document?> GetByIdAsync(int id);
-    Task<Document> UploadAsync(int subjectId, string fileName, string fileType, string filePath, long fileSizeKB);
+    Task<IEnumerable<DocumentDto>> GetAllAsync();
+    Task<IEnumerable<DocumentDto>> GetBySubjectAsync(int subjectId);
+    Task<DocumentDto?> GetByIdAsync(int id);
+    Task<DocumentDto> UploadAsync(int subjectId, string fileName, string fileType, string filePath, long? fileSizeKB);
     Task MarkAsIndexedAsync(int documentId);
     Task DeleteAsync(int id);
 

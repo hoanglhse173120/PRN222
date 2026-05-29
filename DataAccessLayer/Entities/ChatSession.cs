@@ -1,6 +1,6 @@
 using System.ComponentModel.DataAnnotations;
 
-namespace DataAccessLayer.Models;
+namespace DataAccessLayer.Entities;
 
 public class ChatSession
 {

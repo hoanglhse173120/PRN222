@@ -83,7 +83,7 @@ else
                             </a>
                         </td>
                         <td><span class="badge bg-secondary">@doc.FileType</span></td>
-                        <td>@doc.Subject?.SubjectName</td>
+                        <td>@(doc.Subject?.SubjectName ?? "N/A")</td>
                         <td>@(doc.FileSizeKB.HasValue ? $"{doc.FileSizeKB:N0} KB" : "—")</td>
                         <td>
                             @if (doc.IsIndexed)

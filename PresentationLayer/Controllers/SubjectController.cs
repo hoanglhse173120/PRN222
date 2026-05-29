@@ -1,6 +1,6 @@
-using DataAccessLayer.Models;
 using Microsoft.AspNetCore.Mvc;
 using ServiceLayer.Interfaces;
+using ServiceLayer.DTOs;
 
 namespace PresentationLayer.Controllers;
 
@@ -26,11 +26,10 @@ public class SubjectController : Controller
     // POST: /Subject/Create
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Create(Subject subject)
+    public async Task<IActionResult> Create(SubjectDto subject)
     {
         if (!ModelState.IsValid) return View(subject);
 
-        subject.CreatedAt = DateTime.Now;
         await _subjectService.CreateAsync(subject);
         TempData["Success"] = $"Đã tạo môn học \"{subject.SubjectName}\" thành công!";
         return RedirectToAction(nameof(Index));
@@ -47,7 +46,7 @@ public class SubjectController : Controller
     // POST: /Subject/Edit/5
     [HttpPost]
     [ValidateAntiForgeryToken]
-    public async Task<IActionResult> Edit(Subject subject)
+    public async Task<IActionResult> Edit(SubjectDto subject)
     {
         if (!ModelState.IsValid) return View(subject);
 

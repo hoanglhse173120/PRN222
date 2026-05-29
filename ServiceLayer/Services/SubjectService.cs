@@ -1,6 +1,8 @@
-using DataAccessLayer.Models;
+using DataAccessLayer.Entities;
 using DataAccessLayer.Repositories;
 using ServiceLayer.Interfaces;
+using ServiceLayer.DTOs;
+using System.Linq;
 
 namespace ServiceLayer.Services;
 
@@ -10,19 +12,53 @@ public class SubjectService : ISubjectService
 
     public SubjectService(IRepository<Subject> repo) => _repo = repo;
 
-    public async Task<IEnumerable<Subject>> GetAllAsync() => await _repo.GetAllAsync();
-    public async Task<Subject?> GetByIdAsync(int id) => await _repo.GetByIdAsync(id);
-
-    public async Task CreateAsync(Subject subject)
+    public async Task<IEnumerable<SubjectDto>> GetAllAsync()
     {
+        var entities = await _repo.GetAllAsync();
+        return entities.Select(e => new SubjectDto
+        {
+            SubjectID = e.SubjectID,
+            SubjectName = e.SubjectName,
+            Description = e.Description,
+            CreatedAt = e.CreatedAt
+        });
+    }
+
+    public async Task<SubjectDto?> GetByIdAsync(int id)
+    {
+        var e = await _repo.GetByIdAsync(id);
+        if (e == null) return null;
+        return new SubjectDto
+        {
+            SubjectID = e.SubjectID,
+            SubjectName = e.SubjectName,
+            Description = e.Description,
+            CreatedAt = e.CreatedAt
+        };
+    }
+
+    public async Task CreateAsync(SubjectDto dto)
+    {
+        var subject = new Subject
+        {
+            SubjectName = dto.SubjectName,
+            Description = dto.Description,
+            CreatedAt = DateTime.Now
+        };
         await _repo.AddAsync(subject);
         await _repo.SaveChangesAsync();
     }
 
-    public async Task UpdateAsync(Subject subject)
+    public async Task UpdateAsync(SubjectDto dto)
     {
-        _repo.Update(subject);
-        await _repo.SaveChangesAsync();
+        var subject = await _repo.GetByIdAsync(dto.SubjectID);
+        if (subject != null)
+        {
+            subject.SubjectName = dto.SubjectName;
+            subject.Description = dto.Description;
+            _repo.Update(subject);
+            await _repo.SaveChangesAsync();
+        }
     }
 
     public async Task DeleteAsync(int id)
