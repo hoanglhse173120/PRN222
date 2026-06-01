@@ -83,6 +83,35 @@ public class DocumentService : IDocumentService
         };
     }
 
+    public async Task<DocumentDetailsDto?> GetDetailsWithChunksAsync(int id)
+    {
+        var doc = await _repo.GetByIdWithChunksAsync(id);
+        if (doc == null) return null;
+
+        return new DocumentDetailsDto
+        {
+            DocumentID = doc.DocumentID,
+            FileName = doc.FileName,
+            FileType = doc.FileType,
+            FilePath = doc.FilePath,
+            FileSizeKB = doc.FileSizeKB,
+            IsIndexed = doc.IsIndexed,
+            UploadedAt = doc.UploadedAt,
+            Subject = doc.Subject != null
+                ? new SubjectDto { SubjectID = doc.Subject.SubjectID, SubjectName = doc.Subject.SubjectName }
+                : null,
+            Chunks = doc.DocumentChunks.Select(c => new DocumentChunkDto
+            {
+                ChunkID = c.ChunkID,
+                DocumentID = c.DocumentID,
+                ChunkIndex = c.ChunkIndex,
+                ChunkContent = c.ChunkContent,
+                CreatedAt = c.CreatedAt,
+                EmbeddingJson = c.Embedding
+            }).ToList()
+        };
+    }
+
     public async Task MarkAsIndexedAsync(int documentId)
     {
         var doc = await _repo.GetByIdAsync(documentId);

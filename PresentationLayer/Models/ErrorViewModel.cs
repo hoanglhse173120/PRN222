@@ -1,9 +1,7 @@
-namespace PresentationLayer.Models
-{
-    public class ErrorViewModel
-    {
-        public string? RequestId { get; set; }
+namespace PresentationLayer.Models;
 
-        public bool ShowRequestId => !string.IsNullOrEmpty(RequestId);
-    }
+public class ErrorViewModel
+{
+    public string? RequestId { get; set; }
+    public bool ShowRequestId => !string.IsNullOrEmpty(RequestId);
 }

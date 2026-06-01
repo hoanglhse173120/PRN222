@@ -7,6 +7,7 @@ public interface IDocumentService
     Task<IEnumerable<DocumentDto>> GetAllAsync();
     Task<IEnumerable<DocumentDto>> GetBySubjectAsync(int subjectId);
     Task<DocumentDto?> GetByIdAsync(int id);
+    Task<DocumentDetailsDto?> GetDetailsWithChunksAsync(int id);
     Task<DocumentDto> UploadAsync(int subjectId, string fileName, string fileType, string filePath, long? fileSizeKB);
     Task MarkAsIndexedAsync(int documentId);
     Task DeleteAsync(int id);

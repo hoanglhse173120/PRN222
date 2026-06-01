@@ -11,7 +11,8 @@ public class DocumentController : Controller
     private readonly ISubjectService _subjectService;
     private readonly IWebHostEnvironment _env;
 
-    private static readonly string[] AllowedExtensions = { ".pdf", ".docx", ".pptx", ".doc", ".ppt" };
+    // .ppt (binary cũ) bị loại vì OpenXml không đọc được, chỉ hỗ trợ .pptx
+    private static readonly string[] AllowedExtensions = { ".pdf", ".docx", ".pptx", ".doc" };
 
     public DocumentController(IDocumentService documentService, ISubjectService subjectService, IWebHostEnvironment env)
     {
@@ -123,5 +124,13 @@ public class DocumentController : Controller
         await _documentService.DeleteAsync(id);
         TempData["Success"] = "Đã xóa tài liệu.";
         return RedirectToAction(nameof(Index));
+    }
+
+    // GET: /Document/Details/5
+    public async Task<IActionResult> Details(int id)
+    {
+        var details = await _documentService.GetDetailsWithChunksAsync(id);
+        if (details == null) return NotFound();
+        return View(details);
     }
 }

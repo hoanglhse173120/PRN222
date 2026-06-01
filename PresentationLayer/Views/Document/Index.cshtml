@@ -51,7 +51,7 @@
     </div>
 </div>
 
-{{!-- Bảng tài liệu --}}
+@* Bảng tài liệu *@
 @if (!Model.Documents.Any())
 {
     <div class="alert alert-info">Không tìm thấy tài liệu nào.</div>
@@ -97,6 +97,7 @@ else
                         </td>
                         <td>@doc.UploadedAt.ToString("dd/MM/yyyy HH:mm")</td>
                         <td>
+                            <a asp-action="Details" asp-route-id="@doc.DocumentID" class="btn btn-sm btn-outline-info">🔍 Chi tiết</a>
                             @if (!doc.IsIndexed)
                             {
                                 <form asp-action="MarkIndexed" asp-route-id="@doc.DocumentID" method="post" class="d-inline">
