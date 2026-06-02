@@ -1,6 +1,7 @@
 using DataAccessLayer.Context;
 using DataAccessLayer.Entities;
 using DataAccessLayer.Repositories;
+using Microsoft.AspNetCore.Identity;
 using Microsoft.EntityFrameworkCore;
 using ServiceLayer.Interfaces;
 using ServiceLayer.Services;
@@ -14,6 +15,19 @@ builder.Services.AddHttpClient();
 // ── DbContext ─────────────────────────────────────────
 builder.Services.AddDbContext<ChatbotDbContext>(options =>
     options.UseSqlServer(builder.Configuration.GetConnectionString("DefaultConnection")));
+
+// ── Identity & Auth ───────────────────────────────────
+builder.Services.AddDefaultIdentity<IdentityUser>(options => options.SignIn.RequireConfirmedAccount = false)
+    .AddEntityFrameworkStores<ChatbotDbContext>();
+
+builder.Services.AddAuthentication()
+    .AddGoogle(options =>
+    {
+        options.ClientId = builder.Configuration["Authentication:Google:ClientId"] ?? "PLACEHOLDER";
+        options.ClientSecret = builder.Configuration["Authentication:Google:ClientSecret"] ?? "PLACEHOLDER";
+    });
+
+builder.Services.AddRazorPages();
 
 // ── Repositories (DAL) ───────────────────────────────
 builder.Services.AddScoped(typeof(IRepository<>), typeof(Repository<>));
@@ -41,10 +55,12 @@ if (!app.Environment.IsDevelopment())
 app.UseHttpsRedirection();
 app.UseStaticFiles();
 app.UseRouting();
+app.UseAuthentication();
 app.UseAuthorization();
 
 app.MapControllerRoute(
     name: "default",
     pattern: "{controller=Home}/{action=Index}/{id?}");
+app.MapRazorPages();
 
 app.Run();

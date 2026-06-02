@@ -1,9 +1,11 @@
 using DataAccessLayer.Entities;
+using Microsoft.AspNetCore.Identity;
+using Microsoft.AspNetCore.Identity.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore;
 
 namespace DataAccessLayer.Context;
 
-public class ChatbotDbContext : DbContext
+public class ChatbotDbContext : IdentityDbContext<IdentityUser>
 {
     public ChatbotDbContext(DbContextOptions<ChatbotDbContext> options) : base(options) { }
 
@@ -19,6 +21,8 @@ public class ChatbotDbContext : DbContext
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
+        base.OnModelCreating(modelBuilder);
+
         // Subject → Documents (1:N, cascade delete)
         modelBuilder.Entity<Document>()
             .HasOne(d => d.Subject)
