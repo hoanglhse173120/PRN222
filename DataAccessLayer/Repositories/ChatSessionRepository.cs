@@ -11,7 +11,7 @@ public class ChatSessionRepository : Repository<ChatSession>, IChatSessionReposi
     public async Task<ChatSession?> GetWithMessagesAsync(int sessionId)
         => await _context.ChatSessions
             .Include(s => s.ChatMessages.OrderBy(m => m.Timestamp))
-            .FirstOrDefaultAsync(s => s.SessionID == sessionId);
+            .FirstOrDefaultAsync(s => s.SessionId == sessionId);
 
     public async Task<IEnumerable<ChatSession>> GetAllOrderedAsync()
         => await _context.ChatSessions

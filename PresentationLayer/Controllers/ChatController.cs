@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using ServiceLayer.DTOs;
 using Microsoft.AspNetCore.Mvc;
 using PresentationLayer.ViewModels;
@@ -5,6 +6,7 @@ using ServiceLayer.Interfaces;
 
 namespace PresentationLayer.Controllers;
 
+[Authorize(Roles = "Student")]
 public class ChatController : Controller
 {
     private readonly IChatService _chatService;

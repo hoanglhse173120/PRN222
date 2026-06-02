@@ -1,19 +1,25 @@
-using System.ComponentModel.DataAnnotations;
+﻿using System;
+using System.Collections.Generic;
 
 namespace DataAccessLayer.Entities;
 
-public class ExperimentConfig
+public partial class ExperimentConfig
 {
-    [Key]
-    public int ConfigID { get; set; }
-    public string ConfigName { get; set; } = null!;
-    public string? ApproachType { get; set; }       // 'RAG' | 'Fine-Tuned'
-    public string? EmbeddingModel { get; set; }
-    public string? ChunkingStrategy { get; set; }
-    public int? ChunkSize { get; set; }
-    public int? ChunkOverlap { get; set; }
-    public DateTime CreatedAt { get; set; } = DateTime.Now;
+    public int ConfigId { get; set; }
 
-    // Navigation
-    public ICollection<BenchmarkResult> BenchmarkResults { get; set; } = new List<BenchmarkResult>();
+    public string ConfigName { get; set; } = null!;
+
+    public string? ApproachType { get; set; }
+
+    public string? EmbeddingModel { get; set; }
+
+    public string? ChunkingStrategy { get; set; }
+
+    public int? ChunkSize { get; set; }
+
+    public int? ChunkOverlap { get; set; }
+
+    public DateTime? CreatedAt { get; set; }
+
+    public virtual ICollection<BenchmarkResult> BenchmarkResults { get; set; } = new List<BenchmarkResult>();
 }

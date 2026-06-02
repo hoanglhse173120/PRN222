@@ -1,14 +1,15 @@
-using System.ComponentModel.DataAnnotations;
+﻿using System;
+using System.Collections.Generic;
 
 namespace DataAccessLayer.Entities;
 
-public class ChatSession
+public partial class ChatSession
 {
-    [Key]
-    public int SessionID { get; set; }
-    public string SessionName { get; set; } = "Phiên trò chuyện mới";
-    public DateTime CreatedAt { get; set; } = DateTime.Now;
+    public int SessionId { get; set; }
 
-    // Navigation
-    public ICollection<ChatMessage> ChatMessages { get; set; } = new List<ChatMessage>();
+    public string? SessionName { get; set; }
+
+    public DateTime? CreatedAt { get; set; }
+
+    public virtual ICollection<ChatMessage> ChatMessages { get; set; } = new List<ChatMessage>();
 }
