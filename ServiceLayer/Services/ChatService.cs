@@ -10,11 +10,16 @@ public class ChatService : IChatService
 {
     private readonly IChatSessionRepository _sessionRepo;
     private readonly IRepository<ChatMessage> _messageRepo;
+    private readonly IRepository<MessageSource> _messageSourceRepo;
 
-    public ChatService(IChatSessionRepository sessionRepo, IRepository<ChatMessage> messageRepo)
+    public ChatService(
+        IChatSessionRepository sessionRepo,
+        IRepository<ChatMessage> messageRepo,
+        IRepository<MessageSource> messageSourceRepo)
     {
         _sessionRepo = sessionRepo;
         _messageRepo = messageRepo;
+        _messageSourceRepo = messageSourceRepo;
     }
 
     public async Task<IEnumerable<ChatSessionDto>> GetAllSessionsAsync()
@@ -87,5 +92,36 @@ public class ChatService : IChatService
             _sessionRepo.Delete(session);
             await _sessionRepo.SaveChangesAsync();
         }
+    }
+
+    public async Task<ChatMessageDto> AddMessageWithSourcesAsync(
+        int sessionId, string role, string messageText,
+        List<RagChunkResultDto> sources)
+    {
+        var message = new ChatMessage
+        {
+            SessionID = sessionId,
+            Role = role,
+            MessageText = messageText,
+            Timestamp = DateTime.Now
+        };
+        await _messageRepo.AddAsync(message);
+        await _messageRepo.SaveChangesAsync();
+
+        // Lưu sources (MessageSource) để trích dẫn nguồn
+        foreach (var src in sources)
+        {
+            var ms = new MessageSource
+            {
+                MessageID = message.MessageID,
+                ChunkID = src.ChunkID,
+                RelevanceScore = src.Score
+            };
+            await _messageSourceRepo.AddAsync(ms);
+        }
+        if (sources.Any())
+            await _messageSourceRepo.SaveChangesAsync();
+
+        return MapMessageToDto(message);
     }
 }

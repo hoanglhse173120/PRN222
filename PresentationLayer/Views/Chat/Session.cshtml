@@ -58,7 +58,7 @@
             }
             else
             {
-                @foreach (var msg in Model.Session.ChatMessages.OrderBy(m => m.Timestamp))
+            @foreach (var msg in Model.Session.ChatMessages.OrderBy(m => m.Timestamp))
                 {
                     <div class="msg-bubble @(msg.Role == "user" ? "msg-user" : "msg-ai")">
                         <div>
@@ -70,7 +70,13 @@
                             {
                                 <strong>👤 Bạn: </strong>
                             }
-                            @Html.Raw(msg.MessageText.Replace("\n", "<br/>"))
+                            @{
+                                // Render **bold** và newline
+                                var rendered = System.Text.RegularExpressions.Regex
+                                    .Replace(msg.MessageText, @"\*\*(.*?)\*\*", "<strong>$1</strong>")
+                                    .Replace("\n", "<br/>");
+                            }
+                            @Html.Raw(rendered)
                         </div>
                         <span class="msg-time">@msg.Timestamp.ToString("HH:mm")</span>
                     </div>

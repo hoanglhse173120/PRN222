@@ -27,6 +27,7 @@ builder.Services.AddScoped<IChatService, ChatService>();
 builder.Services.AddScoped<IBenchmarkService, BenchmarkService>();
 builder.Services.AddScoped<ITextExtractorService, TextExtractorService>();
 builder.Services.AddScoped<IChunkingService, ChunkingService>();
+builder.Services.AddScoped<IRagService, RagService>();
 
 var app = builder.Build();
 

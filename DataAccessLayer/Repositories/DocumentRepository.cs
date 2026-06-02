@@ -28,6 +28,13 @@ public class DocumentRepository : Repository<Document>, IDocumentRepository
             .Include(d => d.DocumentChunks.OrderBy(c => c.ChunkIndex))
             .FirstOrDefaultAsync(d => d.DocumentID == documentId);
 
+    public async Task<IEnumerable<DocumentChunk>> GetAllIndexedChunksAsync()
+        => await _context.DocumentChunks
+            .Where(c => c.Embedding != null && c.Document.IsIndexed)
+            .Include(c => c.Document)
+                .ThenInclude(d => d.Subject)
+            .ToListAsync();
+
     public async Task<IEnumerable<Document>> GetIndexedDocumentsAsync()
         => await _context.Documents
             .Where(d => d.IsIndexed)
