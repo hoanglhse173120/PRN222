@@ -147,7 +147,7 @@ public class RagService : IRagService
             model = model,
             messages = new[]
             {
-                new { role = "system", content = "Bạn là trợ lý học tập. Chỉ trả lời dựa trên tài liệu được cung cấp. BẮT BUỘC 100% dùng tiếng Việt (chữ Quốc ngữ). Nghiêm cấm dùng chữ Hán (Chinese characters) như 模, 隐藏, 暴. Đối với thuật ngữ chuyên ngành (như Modularity, Encapsulation...), hãy giữ nguyên tiếng Anh hoặc dịch sang tiếng Việt thuần thục (ví dụ: tính mô-đun hóa, tính đóng gói)." },
+                new { role = "system", content = "Bạn là trợ lý học tập. Chỉ trả lời dựa trên tài liệu được cung cấp. BẮT BUỘC 100% dùng tiếng Việt. Nghiêm cấm dùng chữ Hán (Chinese characters) như 模, 隐藏, 暴. Đối với thuật ngữ chuyên ngành (như Modularity, Encapsulation...), hãy giữ nguyên tiếng Anh hoặc dịch sang tiếng Việt thuần thục (ví dụ: tính mô-đun hóa, tính đóng gói)." },
                 new { role = "user", content = $"Ngữ cảnh:\n{context}\n\nCâu hỏi: {question}" }
             },
             temperature = 0.3,
