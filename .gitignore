@@ -21,3 +21,5 @@ appsettings.Development.json
 *.sqlite3
 *.db
 *.db3
+db_update.txt
+PresentationLayer/appsettings.json
