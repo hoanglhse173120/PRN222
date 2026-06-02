@@ -4,107 +4,231 @@
 }
 
 <style>
-    .chat-container {
-        height: 60vh;
-        overflow-y: auto;
+    body {
+        background-color: #f9f9f9;
+    }
+    .chat-wrapper {
         display: flex;
         flex-direction: column;
-        padding: 1rem;
-        background-color: #f8f9fa;
-        border-radius: 8px;
-        border: 1px solid #dee2e6;
+        height: 75vh;
+        max-width: 900px;
+        margin: 0 auto;
+    }
+    .chat-container {
+        flex-grow: 1;
+        overflow-y: auto;
+        padding: 2rem 1rem;
+        scroll-behavior: smooth;
+    }
+    .msg-row {
+        display: flex;
+        margin-bottom: 1.5rem;
+        gap: 1rem;
+    }
+    .msg-row.user {
+        flex-direction: row-reverse;
+    }
+    .avatar {
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        font-size: 1.2rem;
+    }
+    .avatar.ai {
+        background-color: #10a37f; /* Màu xanh của ChatGPT */
+        color: white;
+    }
+    .avatar.user {
+        background-color: #e5e5e5;
     }
     .msg-bubble {
         max-width: 80%;
-        padding: 10px 15px;
-        border-radius: 15px;
-        margin-bottom: 10px;
+        padding: 12px 18px;
+        border-radius: 20px;
+        line-height: 1.6;
         word-wrap: break-word;
+        font-size: 1rem;
     }
-    .msg-user {
-        background-color: #0d6efd;
+    .msg-row.user .msg-bubble {
+        background-color: #f3f4f6; /* Nền xám nhạt cho user */
+        border-bottom-right-radius: 4px;
+    }
+    .msg-row.ai .msg-bubble {
+        background-color: transparent;
+        padding-left: 0;
+        padding-top: 5px;
+    }
+    
+    /* Box nhập liệu */
+    .input-wrapper {
+        padding: 1rem;
+        background: transparent;
+    }
+    .input-box {
+        background: white;
+        border: 1px solid #d1d5db;
+        border-radius: 24px;
+        box-shadow: 0 0 15px rgba(0,0,0,0.05);
+        padding: 6px 16px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+    }
+    .input-box input {
+        border: none;
+        box-shadow: none;
+        background: transparent;
+        flex-grow: 1;
+        padding: 10px 0;
+    }
+    .input-box input:focus {
+        outline: none;
+        box-shadow: none;
+    }
+    .send-btn {
+        background-color: black;
         color: white;
-        align-self: flex-end;
-        border-bottom-right-radius: 0;
+        border: none;
+        border-radius: 50%;
+        width: 34px;
+        height: 34px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        transition: opacity 0.2s;
     }
-    .msg-ai {
-        background-color: #e9ecef;
-        color: black;
-        align-self: flex-start;
-        border-bottom-left-radius: 0;
-    }
-    .msg-time {
-        font-size: 0.75rem;
-        opacity: 0.7;
-        margin-top: 5px;
-        display: block;
+    .send-btn:hover {
+        opacity: 0.8;
     }
 </style>
 
-<div class="d-flex justify-content-between align-items-center mb-3">
-    <h2><a asp-action="Index" class="text-decoration-none text-dark"><i class="bi bi-arrow-left"></i></a> @Model.Session.SessionName</h2>
-    <span class="text-muted small">Tạo lúc: @Model.Session.CreatedAt.ToString("dd/MM/yyyy HH:mm")</span>
+<div class="d-flex justify-content-between align-items-center mb-2 px-3 pt-2">
+    <h5><a asp-action="Index" class="text-decoration-none text-dark"><i class="bi bi-arrow-left"></i></a> @Model.Session.SessionName</h5>
 </div>
 
-<div class="row justify-content-center">
-    <div class="col-lg-10">
-        <!-- Chat History -->
-        <div class="chat-container mb-3" id="chatBox">
-            @if (!Model.Session.ChatMessages.Any())
+<div class="chat-wrapper">
+    <!-- Chat History -->
+    <div class="chat-container" id="chatBox">
+        @if (!Model.Session.ChatMessages.Any())
+        {
+            <div class="h-100 d-flex flex-column align-items-center justify-content-center text-muted">
+                <div class="avatar ai mb-3" style="width: 50px; height: 50px; font-size: 1.8rem;">✧</div>
+                <h4>Xin chào!</h4>
+                <p>Tôi có thể giúp bạn hiểu rõ hơn về các tài liệu đã tải lên.</p>
+            </div>
+        }
+        else
+        {
+            @foreach (var msg in Model.Session.ChatMessages.OrderBy(m => m.Timestamp))
             {
-                <div class="text-center text-muted my-auto">
-                    <p>🤖 Xin chào! Hãy đặt câu hỏi về các tài liệu đã được index.</p>
+                var isUser = msg.Role == "user";
+                <div class="msg-row @(isUser ? "user" : "ai")">
+                    <div class="avatar @(isUser ? "user" : "ai")">
+                        @if (isUser) { <text>👤</text> } else { <text>✧</text> }
+                    </div>
+                    <div class="msg-bubble">
+                        @{
+                            // Render **bold** và newline
+                            var rendered = System.Text.RegularExpressions.Regex
+                                .Replace(msg.MessageText, @"\*\*(.*?)\*\*", "<strong>$1</strong>")
+                                .Replace("\n", "<br/>");
+                        }
+                        @Html.Raw(rendered)
+                    </div>
                 </div>
             }
-            else
-            {
-            @foreach (var msg in Model.Session.ChatMessages.OrderBy(m => m.Timestamp))
-                {
-                    <div class="msg-bubble @(msg.Role == "user" ? "msg-user" : "msg-ai")">
-                        <div>
-                            @if (msg.Role == "assistant")
-                            {
-                                <strong>🤖 AI: </strong>
-                            }
-                            else
-                            {
-                                <strong>👤 Bạn: </strong>
-                            }
-                            @{
-                                // Render **bold** và newline
-                                var rendered = System.Text.RegularExpressions.Regex
-                                    .Replace(msg.MessageText, @"\*\*(.*?)\*\*", "<strong>$1</strong>")
-                                    .Replace("\n", "<br/>");
-                            }
-                            @Html.Raw(rendered)
-                        </div>
-                        <span class="msg-time">@msg.Timestamp.ToString("HH:mm")</span>
-                    </div>
-                }
-            }
-        </div>
+        }
+    </div>
 
-        <!-- Chat Input -->
-        <div class="card shadow-sm border-0 bg-light">
-            <div class="card-body p-2">
-                <form asp-action="SendMessage" method="post" class="d-flex gap-2">
-                    @Html.AntiForgeryToken()
-                    <input type="hidden" name="sessionId" value="@Model.Session.SessionID" />
-                    <input type="text" name="newMessage" class="form-control border-0 bg-white shadow-none" 
-                           placeholder="Nhập câu hỏi của bạn..." required autocomplete="off" autofocus />
-                    <button type="submit" class="btn btn-primary rounded-circle" style="width: 45px; height: 45px;">
-                        <span style="font-size: 1.2rem;">➤</span>
-                    </button>
-                </form>
+    <!-- Chat Input -->
+    <div class="input-wrapper">
+        <form id="chatForm" asp-action="SendMessageAjax" method="post">
+            @Html.AntiForgeryToken()
+            <input type="hidden" name="sessionId" value="@Model.Session.SessionID" />
+            <div class="input-box">
+                <input type="text" id="newMessage" name="newMessage" class="form-control border-0 shadow-none" 
+                       placeholder="Message AI..." required autocomplete="off" autofocus />
+                <button type="submit" class="send-btn" id="sendBtn">
+                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" class="text-white"><path d="M7 11L12 6L17 11M12 18V7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+                </button>
             </div>
-        </div>
+        </form>
     </div>
 </div>
 
 @section Scripts {
     <script>
-        // Tự động cuộn xuống cuối khi load trang
-        var chatBox = document.getElementById("chatBox");
+        const chatBox = document.getElementById("chatBox");
         chatBox.scrollTop = chatBox.scrollHeight;
+
+        const form = document.getElementById("chatForm");
+        const input = document.getElementById("newMessage");
+        const sendBtn = document.getElementById("sendBtn");
+
+        form.addEventListener("submit", async function (e) {
+            e.preventDefault();
+            const messageText = input.value.trim();
+            if (!messageText) return;
+
+            // Xóa câu chào mặc định nếu có
+            const emptyState = document.querySelector(".h-100.d-flex");
+            if (emptyState) emptyState.remove();
+
+            // Hiển thị tin nhắn của User
+            const userHtml = `
+                <div class="msg-row user">
+                    <div class="avatar user">👤</div>
+                    <div class="msg-bubble">
+                        ${messageText}
+                    </div>
+                </div>`;
+            chatBox.insertAdjacentHTML("beforeend", userHtml);
+
+            // Hiển thị icon Loading của AI
+            const loadingId = "loading-" + Date.now();
+            const aiHtml = `
+                <div class="msg-row ai" id="${loadingId}">
+                    <div class="avatar ai">✧</div>
+                    <div class="msg-bubble">
+                        <span class="spinner-grow spinner-grow-sm text-secondary" role="status" aria-hidden="true"></span>
+                        <span class="spinner-grow spinner-grow-sm text-secondary" role="status" aria-hidden="true" style="animation-delay: 0.2s;"></span>
+                        <span class="spinner-grow spinner-grow-sm text-secondary" role="status" aria-hidden="true" style="animation-delay: 0.4s;"></span>
+                    </div>
+                </div>`;
+            chatBox.insertAdjacentHTML("beforeend", aiHtml);
+            
+            chatBox.scrollTop = chatBox.scrollHeight;
+            input.value = "";
+            sendBtn.disabled = true;
+
+            const formData = new FormData(form);
+            formData.set("newMessage", messageText);
+
+            try {
+                const response = await fetch(form.action, {
+                    method: "POST",
+                    body: formData
+                });
+                
+                const data = await response.json();
+                const loadingBubble = document.getElementById(loadingId);
+                
+                if (data.success) {
+                    loadingBubble.querySelector(".msg-bubble").innerHTML = data.answerHtml;
+                } else {
+                    loadingBubble.querySelector(".msg-bubble").innerHTML = "⚠️ Lỗi xử lý tin nhắn.";
+                }
+            } catch (error) {
+                document.getElementById(loadingId).querySelector(".msg-bubble").innerHTML = "⚠️ Lỗi kết nối tới máy chủ.";
+            } finally {
+                sendBtn.disabled = false;
+                input.focus();
+                chatBox.scrollTop = chatBox.scrollHeight;
+            }
+        });
     </script>
 }

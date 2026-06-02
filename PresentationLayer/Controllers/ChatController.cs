@@ -43,48 +43,48 @@ public class ChatController : Controller
         return View(vm);
     }
 
-    // POST: /Chat/SendMessage  — RAG Pipeline
-    [HttpPost]
-    [ValidateAntiForgeryToken]
-    public async Task<IActionResult> SendMessage(int sessionId, string newMessage)
-    {
-        if (string.IsNullOrWhiteSpace(newMessage))
-            return RedirectToAction(nameof(Session), new { id = sessionId });
-
-        // 1. Lưu câu hỏi của user
-        await _chatService.AddMessageAsync(sessionId, "user", newMessage);
-
-        try
+        // POST: /Chat/SendMessageAjax  — RAG Pipeline cho AJAX (Không làm khựng web)
+        [HttpPost]
+        [ValidateAntiForgeryToken]
+        public async Task<IActionResult> SendMessageAjax(int sessionId, string newMessage)
         {
-            // 2. Gọi RAG pipeline: embed → search → Gemini
-            var ragResult = await _ragService.AskAsync(newMessage);
+            if (string.IsNullOrWhiteSpace(newMessage))
+                return Json(new { success = false, message = "Empty message" });
 
-            // 3. Format answer kèm sources
-            var answerText = ragResult.Answer;
-            if (ragResult.IsFromDocuments && ragResult.Sources.Any())
+            // 1. Lưu câu hỏi của user
+            await _chatService.AddMessageAsync(sessionId, "user", newMessage);
+
+            string rawAnswer = "";
+            try
             {
-                answerText += "\n\n📚 **Nguồn tham khảo:**\n" +
-                    string.Join("\n", ragResult.Sources.Select((s, i) =>
-                        $"{i + 1}. [{s.FileName}] Chunk #{s.ChunkIndex} (score: {s.Score:F2})"));
+                // 2. Gọi RAG pipeline: embed → search → Gemini/Groq
+                var ragResult = await _ragService.AskAsync(newMessage);
+
+                // 3. Lấy câu trả lời
+                rawAnswer = ragResult.Answer;
+
+                // 4. Lưu câu trả lời của AI (vẫn lưu nguồn tham khảo MessageSource vào database)
+                await _chatService.AddMessageWithSourcesAsync(
+                    sessionId, "assistant", rawAnswer, ragResult.Sources);
+            }
+            catch (Exception ex)
+            {
+                // Nếu Python service chưa chạy hoặc lỗi khác
+                var errMsg = ex.InnerException?.Message ?? ex.Message;
+                rawAnswer = $"⚠️ Lỗi khi xử lý câu hỏi: {errMsg}\n\nĐảm bảo Python AI Service đang chạy ở cổng 8000 và đã có tài liệu được index.";
+                
+                await _chatService.AddMessageAsync(sessionId, "assistant", rawAnswer);
             }
 
-            // 4. Lưu câu trả lời của AI (kèm MessageSource citations)
-            await _chatService.AddMessageWithSourcesAsync(
-                sessionId, "assistant", answerText, ragResult.Sources);
-        }
-        catch (Exception ex)
-        {
-            // Nếu Python service chưa chạy hoặc lỗi khác
-            var errMsg = ex.InnerException?.Message ?? ex.Message;
-            await _chatService.AddMessageAsync(sessionId, "assistant",
-                $"⚠️ Lỗi khi xử lý câu hỏi: {errMsg}\n\n" +
-                "Đảm bảo Python AI Service đang chạy ở cổng 8000 và đã có tài liệu được index.");
+            // Xử lý text (để HTML hiển thị đẹp các dấu in đậm và xuống dòng)
+            var rendered = System.Text.RegularExpressions.Regex
+                .Replace(rawAnswer, @"\*\*(.*?)\*\*", "<strong>$1</strong>")
+                .Replace("\n", "<br/>");
+
+            return Json(new { success = true, answerHtml = rendered });
         }
 
-        return RedirectToAction(nameof(Session), new { id = sessionId });
-    }
-
-    // POST: /Chat/Delete/5
+        // POST: /Chat/Delete/5
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Delete(int id)
