@@ -5,7 +5,7 @@
 
 <style>
     body {
-        background-color: #f9f9f9;
+        background-color: var(--background-light);
     }
     .chat-wrapper {
         display: flex;
@@ -13,70 +13,96 @@
         height: 75vh;
         max-width: 900px;
         margin: 0 auto;
+        background: var(--glass-bg);
+        backdrop-filter: blur(12px);
+        border: 1px solid var(--glass-border);
+        border-radius: 20px;
+        box-shadow: 0 10px 40px rgba(0,0,0,0.05);
+        overflow: hidden;
     }
     .chat-container {
         flex-grow: 1;
         overflow-y: auto;
-        padding: 2rem 1rem;
+        padding: 2rem 1.5rem;
         scroll-behavior: smooth;
+    }
+    .chat-container::-webkit-scrollbar {
+        width: 6px;
+    }
+    .chat-container::-webkit-scrollbar-thumb {
+        background: #cbd5e1;
+        border-radius: 10px;
     }
     .msg-row {
         display: flex;
-        margin-bottom: 1.5rem;
-        gap: 1rem;
+        margin-bottom: 2rem;
+        gap: 1.25rem;
+        animation: fadeInUp 0.4s ease-out forwards;
     }
     .msg-row.user {
         flex-direction: row-reverse;
     }
     .avatar {
-        width: 36px;
-        height: 36px;
+        width: 42px;
+        height: 42px;
         border-radius: 50%;
         display: flex;
         align-items: center;
         justify-content: center;
         flex-shrink: 0;
         font-size: 1.2rem;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.08);
     }
     .avatar.ai {
-        background-color: #10a37f; /* Màu xanh của ChatGPT */
+        background: linear-gradient(135deg, var(--primary), var(--secondary));
         color: white;
     }
     .avatar.user {
-        background-color: #e5e5e5;
+        background-color: white;
+        color: var(--text-dark);
+        border: 1px solid #e5e7eb;
     }
     .msg-bubble {
-        max-width: 80%;
-        padding: 12px 18px;
-        border-radius: 20px;
+        max-width: 75%;
+        padding: 14px 20px;
+        border-radius: 18px;
         line-height: 1.6;
         word-wrap: break-word;
-        font-size: 1rem;
+        font-size: 1.05rem;
+        box-shadow: 0 2px 8px rgba(0,0,0,0.02);
     }
     .msg-row.user .msg-bubble {
-        background-color: #f3f4f6; /* Nền xám nhạt cho user */
+        background-color: var(--primary);
+        color: white;
         border-bottom-right-radius: 4px;
     }
     .msg-row.ai .msg-bubble {
-        background-color: transparent;
-        padding-left: 0;
-        padding-top: 5px;
+        background-color: white;
+        color: var(--text-dark);
+        border-bottom-left-radius: 4px;
+        border: 1px solid #f3f4f6;
     }
     
     /* Box nhập liệu */
     .input-wrapper {
-        padding: 1rem;
-        background: transparent;
+        padding: 1rem 1.5rem;
+        background: rgba(255, 255, 255, 0.9);
+        border-top: 1px solid #f3f4f6;
     }
     .input-box {
         background: white;
-        border: 1px solid #d1d5db;
-        border-radius: 24px;
-        box-shadow: 0 0 15px rgba(0,0,0,0.05);
-        padding: 6px 16px;
+        border: 1px solid #e5e7eb;
+        border-radius: 30px;
+        box-shadow: 0 4px 15px rgba(0,0,0,0.03);
+        padding: 8px 12px 8px 24px;
         display: flex;
         align-items: center;
         gap: 10px;
+        transition: all 0.3s ease;
+    }
+    .input-box:focus-within {
+        border-color: var(--primary);
+        box-shadow: 0 4px 20px rgba(79, 70, 229, 0.15);
     }
     .input-box input {
         border: none;
@@ -84,41 +110,59 @@
         background: transparent;
         flex-grow: 1;
         padding: 10px 0;
+        font-size: 1rem;
+        color: var(--text-dark);
     }
     .input-box input:focus {
         outline: none;
         box-shadow: none;
     }
+    .input-box input::placeholder {
+        color: #9ca3af;
+    }
     .send-btn {
-        background-color: black;
+        background: linear-gradient(135deg, var(--primary), var(--secondary));
         color: white;
         border: none;
         border-radius: 50%;
-        width: 34px;
-        height: 34px;
+        width: 40px;
+        height: 40px;
         display: flex;
         align-items: center;
         justify-content: center;
-        transition: opacity 0.2s;
+        transition: transform 0.2s, box-shadow 0.2s;
     }
     .send-btn:hover {
-        opacity: 0.8;
+        transform: scale(1.05);
+        box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3);
+    }
+    .send-btn:disabled {
+        opacity: 0.5;
+        cursor: not-allowed;
+        transform: none;
+    }
+    @@keyframes fadeInUp {
+        from { opacity: 0; transform: translateY(10px); }
+        to { opacity: 1; transform: translateY(0); }
     }
 </style>
 
-<div class="d-flex justify-content-between align-items-center mb-2 px-3 pt-2">
-    <h5><a asp-action="Index" class="text-decoration-none text-dark"><i class="bi bi-arrow-left"></i></a> @Model.Session.SessionName</h5>
+<div class="d-flex justify-content-between align-items-center mb-3 px-3 pt-2 fade-in-up">
+    <h5 class="fw-bold m-0" style="color: var(--primary);">
+        <a asp-action="Index" class="text-decoration-none text-muted me-2" style="font-size: 1.2rem;"><i class="bi bi-arrow-left-circle"></i></a>
+        @Model.Session.SessionName
+    </h5>
 </div>
 
-<div class="chat-wrapper">
+<div class="chat-wrapper fade-in-up">
     <!-- Chat History -->
     <div class="chat-container" id="chatBox">
         @if (!Model.Session.ChatMessages.Any())
         {
             <div class="h-100 d-flex flex-column align-items-center justify-content-center text-muted">
-                <div class="avatar ai mb-3" style="width: 50px; height: 50px; font-size: 1.8rem;">✧</div>
-                <h4>Xin chào!</h4>
-                <p>Tôi có thể giúp bạn hiểu rõ hơn về các tài liệu đã tải lên.</p>
+                <div class="avatar ai mb-4" style="width: 70px; height: 70px; font-size: 2.2rem; box-shadow: 0 10px 25px rgba(79, 70, 229, 0.3);">✨</div>
+                <h3 class="fw-bold text-dark">Xin chào!</h3>
+                <p class="text-center px-4">Tôi là trợ lý AI thông minh dựa trên RAG.<br>Hãy đặt câu hỏi về tài liệu môn học của bạn.</p>
             </div>
         }
         else
@@ -128,7 +172,7 @@
                 var isUser = msg.Role == "user";
                 <div class="msg-row @(isUser ? "user" : "ai")">
                     <div class="avatar @(isUser ? "user" : "ai")">
-                        @if (isUser) { <text>👤</text> } else { <text>✧</text> }
+                        @if (isUser) { <text>👤</text> } else { <text>✨</text> }
                     </div>
                     <div class="msg-bubble">
                         @{
@@ -151,9 +195,9 @@
             <input type="hidden" name="sessionId" value="@Model.Session.SessionID" />
             <div class="input-box">
                 <input type="text" id="newMessage" name="newMessage" class="form-control border-0 shadow-none" 
-                       placeholder="Message AI..." required autocomplete="off" autofocus />
+                       placeholder="Hỏi AI về tài liệu..." required autocomplete="off" autofocus />
                 <button type="submit" class="send-btn" id="sendBtn">
-                    <svg width="24" height="24" viewBox="0 0 24 24" fill="none" class="text-white"><path d="M7 11L12 6L17 11M12 18V7" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"></path></svg>
+                    <i class="bi bi-send-fill"></i>
                 </button>
             </div>
         </form>
@@ -163,6 +207,7 @@
 @section Scripts {
     <script>
         const chatBox = document.getElementById("chatBox");
+        // Scroll to bottom immediately
         chatBox.scrollTop = chatBox.scrollHeight;
 
         const form = document.getElementById("chatForm");
@@ -192,11 +237,11 @@
             const loadingId = "loading-" + Date.now();
             const aiHtml = `
                 <div class="msg-row ai" id="${loadingId}">
-                    <div class="avatar ai">✧</div>
-                    <div class="msg-bubble">
-                        <span class="spinner-grow spinner-grow-sm text-secondary" role="status" aria-hidden="true"></span>
+                    <div class="avatar ai">✨</div>
+                    <div class="msg-bubble d-flex align-items-center gap-2" style="background-color: transparent; border: none; box-shadow: none;">
+                        <span class="spinner-grow spinner-grow-sm text-primary" role="status" aria-hidden="true"></span>
                         <span class="spinner-grow spinner-grow-sm text-secondary" role="status" aria-hidden="true" style="animation-delay: 0.2s;"></span>
-                        <span class="spinner-grow spinner-grow-sm text-secondary" role="status" aria-hidden="true" style="animation-delay: 0.4s;"></span>
+                        <span class="spinner-grow spinner-grow-sm text-primary" role="status" aria-hidden="true" style="animation-delay: 0.4s;"></span>
                     </div>
                 </div>`;
             chatBox.insertAdjacentHTML("beforeend", aiHtml);
@@ -218,12 +263,12 @@
                 const loadingBubble = document.getElementById(loadingId);
                 
                 if (data.success) {
-                    loadingBubble.querySelector(".msg-bubble").innerHTML = data.answerHtml;
+                    loadingBubble.querySelector(".msg-bubble").outerHTML = `<div class="msg-bubble">${data.answerHtml}</div>`;
                 } else {
-                    loadingBubble.querySelector(".msg-bubble").innerHTML = "⚠️ Lỗi xử lý tin nhắn.";
+                    loadingBubble.querySelector(".msg-bubble").outerHTML = `<div class="msg-bubble text-danger bg-light">⚠️ Lỗi xử lý tin nhắn.</div>`;
                 }
             } catch (error) {
-                document.getElementById(loadingId).querySelector(".msg-bubble").innerHTML = "⚠️ Lỗi kết nối tới máy chủ.";
+                document.getElementById(loadingId).querySelector(".msg-bubble").outerHTML = `<div class="msg-bubble text-danger bg-light">⚠️ Lỗi kết nối tới máy chủ.</div>`;
             } finally {
                 sendBtn.disabled = false;
                 input.focus();

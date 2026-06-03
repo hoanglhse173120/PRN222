@@ -2,7 +2,39 @@
     ViewData["Title"] = "Home Page";
 }
 
-<div class="text-center">
-    <h1 class="display-4">Welcome</h1>
-    <p>Learn about <a href="https://learn.microsoft.com/aspnet/core">building Web apps with ASP.NET Core</a>.</p>
+<div class="row align-items-center justify-content-center min-vh-75 py-5 mt-5">
+    <div class="col-lg-8 text-center fade-in-up">
+        <div class="d-inline-flex align-items-center gap-2 px-3 py-2 rounded-pill mb-4" style="background-color: rgba(79, 70, 229, 0.1); color: var(--primary);">
+            <span class="badge rounded-pill bg-primary">Mới</span>
+            <span class="fw-medium small">Trợ lý học tập thông minh đã ra mắt!</span>
+        </div>
+        
+        <h1 class="display-3 fw-bold mb-4" style="letter-spacing: -1px;">
+            Khám phá tri thức với <br />
+            <span style="background: linear-gradient(135deg, var(--primary), var(--secondary)); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">AI Chatbot</span>
+        </h1>
+        
+        <p class="lead text-muted mb-5 px-md-5" style="font-size: 1.25rem; line-height: 1.7;">
+            Nâng tầm trải nghiệm học tập của bạn bằng cách tương tác trực tiếp với các tài liệu môn học qua trợ lý AI thông minh dựa trên công nghệ RAG tiên tiến.
+        </p>
+        
+        <div class="d-flex flex-column flex-sm-row justify-content-center gap-3">
+            @if (User.Identity.IsAuthenticated)
+            {
+                <a asp-controller="Chat" asp-action="Index" class="btn btn-primary btn-lg rounded-pill px-5 py-3 shadow-lg">
+                    <i class="bi bi-chat-dots me-2"></i> Bắt đầu trò chuyện
+                </a>
+                <a asp-controller="Document" asp-action="Index" class="btn btn-outline-primary btn-lg rounded-pill px-5 py-3">
+                    <i class="bi bi-folder2-open me-2"></i> Xem tài liệu
+                </a>
+            }
+            else
+            {
+                <a asp-area="Identity" asp-page="/Account/Login" class="btn btn-primary btn-lg rounded-pill px-5 py-3 shadow-lg">
+                    Đăng nhập ngay <i class="bi bi-arrow-right ms-2"></i>
+                </a>
+            }
+        </div>
+    </div>
 </div>
+

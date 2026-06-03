@@ -24,3 +24,5 @@ appsettings.Development.json
 db_update.txt
 PresentationLayer/appsettings.json
 DataAccessLayer/Entities/ChatbotRbldbContext.cs
+PresentationLayer/appsettings.json
+PresentationLayer/appsettings.json
