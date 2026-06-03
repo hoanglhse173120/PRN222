@@ -8,6 +8,7 @@ using ServiceLayer.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.AspNetCore.Mvc.Authorization;
+using PresentationLayer.Data;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -21,6 +22,7 @@ builder.Services.AddDbContext<ChatbotDbContext>(options =>
 
 // ── Identity & Auth ───────────────────────────────────
 builder.Services.AddDefaultIdentity<IdentityUser>(options => options.SignIn.RequireConfirmedAccount = false)
+    .AddRoles<IdentityRole>()
     .AddEntityFrameworkStores<ChatbotDbContext>();
 
 builder.Services.AddAuthentication()
@@ -48,6 +50,19 @@ builder.Services.AddScoped<IRagService, RagService>();
 
 var app = builder.Build();
 
+using (var scope = app.Services.CreateScope())
+{
+    var services = scope.ServiceProvider;
+    try
+    {
+        await DataSeeder.SeedRolesAndUsersAsync(services);
+    }
+    catch (Exception ex)
+    {
+        var logger = services.GetRequiredService<ILogger<Program>>();
+        logger.LogError(ex, "An error occurred seeding the DB.");
+    }
+}
 // ── Pipeline ─────────────────────────────────────────
 if (!app.Environment.IsDevelopment())
 {

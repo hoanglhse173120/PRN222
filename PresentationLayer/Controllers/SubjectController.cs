@@ -1,9 +1,11 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using ServiceLayer.Interfaces;
 using ServiceLayer.DTOs;
 
 namespace PresentationLayer.Controllers;
 
+[Authorize(Roles = "Teacher")]
 public class SubjectController : Controller
 {
     private readonly ISubjectService _subjectService;

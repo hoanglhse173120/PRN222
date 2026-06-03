@@ -1,16 +1,19 @@
-using System.ComponentModel.DataAnnotations;
+﻿using System;
+using System.Collections.Generic;
 
 namespace DataAccessLayer.Entities;
 
-public class MessageSource
+public partial class MessageSource
 {
-    [Key]
-    public int SourceID { get; set; }
-    public int MessageID { get; set; }
-    public int ChunkID { get; set; }
+    public int SourceId { get; set; }
+
+    public int MessageId { get; set; }
+
+    public int ChunkId { get; set; }
+
     public double? RelevanceScore { get; set; }
 
-    // Navigation
-    public ChatMessage ChatMessage { get; set; } = null!;
-    public DocumentChunk DocumentChunk { get; set; } = null!;
+    public virtual DocumentChunk Chunk { get; set; } = null!;
+
+    public virtual ChatMessage Message { get; set; } = null!;
 }

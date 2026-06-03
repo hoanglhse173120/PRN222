@@ -1,19 +1,25 @@
-using System.ComponentModel.DataAnnotations;
+﻿using System;
+using System.Collections.Generic;
 
 namespace DataAccessLayer.Entities;
 
-public class DocumentChunk
+public partial class DocumentChunk
 {
-    [Key]
-    public int ChunkID { get; set; }
-    public int DocumentID { get; set; }
-    public string ChunkContent { get; set; } = null!;
-    public int? ChunkIndex { get; set; }
-    public int? PageNumber { get; set; }
-    public string? Embedding { get; set; }
-    public DateTime CreatedAt { get; set; } = DateTime.Now;
+    public int ChunkId { get; set; }
 
-    // Navigation
-    public Document Document { get; set; } = null!;
-    public ICollection<MessageSource> MessageSources { get; set; } = new List<MessageSource>();
+    public int DocumentId { get; set; }
+
+    public string ChunkContent { get; set; } = null!;
+
+    public int? ChunkIndex { get; set; }
+
+    public int? PageNumber { get; set; }
+
+    public DateTime? CreatedAt { get; set; }
+
+    public string? Embedding { get; set; }
+
+    public virtual Document Document { get; set; } = null!;
+
+    public virtual ICollection<MessageSource> MessageSources { get; set; } = new List<MessageSource>();
 }

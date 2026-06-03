@@ -51,7 +51,7 @@ public class ChatService : IChatService
     {
         var message = new ChatMessage
         {
-            SessionID = sessionId,
+            SessionId = sessionId,
             Role = role,
             MessageText = messageText,
             Timestamp = DateTime.Now
@@ -65,9 +65,9 @@ public class ChatService : IChatService
     {
         return new ChatSessionDto
         {
-            SessionID = session.SessionID,
+            SessionID = session.SessionId,
             SessionName = session.SessionName,
-            CreatedAt = session.CreatedAt,
+            CreatedAt = session.CreatedAt ?? DateTime.MinValue,
             ChatMessages = session.ChatMessages?.Select(MapMessageToDto).ToList() ?? new List<ChatMessageDto>()
         };
     }
@@ -76,11 +76,11 @@ public class ChatService : IChatService
     {
         return new ChatMessageDto
         {
-            MessageID = message.MessageID,
-            SessionID = message.SessionID,
+            MessageID = message.MessageId,
+            SessionID = message.SessionId,
             Role = message.Role,
             MessageText = message.MessageText,
-            Timestamp = message.Timestamp
+            Timestamp = message.Timestamp ?? DateTime.MinValue
         };
     }
 
@@ -100,7 +100,7 @@ public class ChatService : IChatService
     {
         var message = new ChatMessage
         {
-            SessionID = sessionId,
+            SessionId = sessionId,
             Role = role,
             MessageText = messageText,
             Timestamp = DateTime.Now
@@ -113,8 +113,8 @@ public class ChatService : IChatService
         {
             var ms = new MessageSource
             {
-                MessageID = message.MessageID,
-                ChunkID = src.ChunkID,
+                MessageId = message.MessageId,
+                ChunkId = src.ChunkID,
                 RelevanceScore = src.Score
             };
             await _messageSourceRepo.AddAsync(ms);
