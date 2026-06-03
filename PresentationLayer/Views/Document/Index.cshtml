@@ -1,133 +1,415 @@
 @model PresentationLayer.ViewModels.DocumentIndexViewModel
 @{
     ViewData["Title"] = "Quản lý Tài liệu";
+    var totalDocs = Model.Documents.Count();
+    var indexedDocs = Model.Documents.Count(d => d.IsIndexed == true);
+    var pendingDocs = Model.Documents.Count(d => d.IsIndexed != true);
 }
 
-<div class="d-flex justify-content-between align-items-center mb-3">
-    <h2>📁 Quản lý Tài liệu</h2>
-    @if (User.IsInRole("Teacher"))
+<div class="doc-page">
+
+    @* ── Header ── *@
+    <div class="page-header mb-4">
+        <div class="d-flex align-items-center gap-3">
+            <div class="page-icon">
+                <i class="bi bi-folder2-open"></i>
+            </div>
+            <div>
+                <h1 class="page-title mb-0">Quản lý Tài liệu</h1>
+                <p class="page-subtitle mb-0">Quản lý toàn bộ tài liệu học tập của hệ thống</p>
+            </div>
+        </div>
+        @if (User.IsInRole("Teacher"))
+        {
+            <a asp-action="Upload" class="btn btn-primary btn-upload ms-auto">
+                <i class="bi bi-cloud-arrow-up-fill me-2"></i>Upload tài liệu
+            </a>
+        }
+    </div>
+
+    @* ── Alerts ── *@
+    @if (TempData["Success"] != null)
     {
-        <a asp-action="Upload" class="btn btn-primary">⬆ Upload tài liệu</a>
+        <div class="alert alert-success alert-dismissible fade show modern-alert" role="alert">
+            <i class="bi bi-check-circle-fill me-2"></i>@TempData["Success"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
     }
-</div>
+    @if (TempData["Error"] != null)
+    {
+        <div class="alert alert-danger alert-dismissible fade show modern-alert" role="alert">
+            <i class="bi bi-exclamation-triangle-fill me-2"></i>@TempData["Error"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
 
-@if (TempData["Success"] != null)
-{
-    <div class="alert alert-success alert-dismissible fade show">
-        @TempData["Success"]
-        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+    @* ── Stats Cards ── *@
+    <div class="stats-row mb-4">
+        <div class="stat-card total">
+            <div class="stat-icon"><i class="bi bi-files"></i></div>
+            <div class="stat-content">
+                <span class="stat-number">@totalDocs</span>
+                <span class="stat-label">Tổng tài liệu</span>
+            </div>
+        </div>
+        <div class="stat-card indexed">
+            <div class="stat-icon"><i class="bi bi-check2-circle"></i></div>
+            <div class="stat-content">
+                <span class="stat-number">@indexedDocs</span>
+                <span class="stat-label">Đã Index</span>
+            </div>
+        </div>
+        <div class="stat-card pending">
+            <div class="stat-icon"><i class="bi bi-hourglass-split"></i></div>
+            <div class="stat-content">
+                <span class="stat-number">@pendingDocs</span>
+                <span class="stat-label">Chờ Index</span>
+            </div>
+        </div>
     </div>
-}
-@if (TempData["Error"] != null)
-{
-    <div class="alert alert-danger alert-dismissible fade show">
-        ❌ @TempData["Error"]
-        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-    </div>
-}
 
-@* Bộ lọc *@
-<div class="card mb-3">
-    <div class="card-body">
-        <form method="get" class="row g-2 align-items-end">
-            <div class="col-md-4">
-                <label class="form-label fw-bold">Môn học</label>
-                <select name="subjectId" class="form-select" onchange="this.form.submit()">
-                    <option value="">-- Tất cả môn học --</option>
+    @* ── Filter Bar ── *@
+    <div class="filter-bar mb-4">
+        <form method="get" class="filter-form">
+            <div class="filter-group">
+                <i class="bi bi-journal-bookmark filter-icon"></i>
+                <select name="subjectId" class="filter-select" onchange="this.form.submit()">
+                    <option value="">Tất cả môn học</option>
                     @foreach (var s in Model.Subjects)
                     {
-                        <option value="@s.SubjectID" selected="@(Model.SelectedSubjectId == s.SubjectID)">
-                            @s.SubjectName
-                        </option>
+                        <option value="@s.SubjectID" selected="@(Model.SelectedSubjectId == s.SubjectID)">@s.SubjectName</option>
                     }
                 </select>
             </div>
-            <div class="col-md-4">
-                <label class="form-label fw-bold">Trạng thái</label>
-                <select name="filter" class="form-select" onchange="this.form.submit()">
-                    <option value="all" selected="@(Model.Filter == "all")">Tất cả</option>
-                    <option value="indexed" selected="@(Model.Filter == "indexed")">✅ Đã Index</option>
-                    <option value="pending" selected="@(Model.Filter == "pending")">⏳ Chưa Index</option>
+            <div class="filter-divider"></div>
+            <div class="filter-group">
+                <i class="bi bi-funnel filter-icon"></i>
+                <select name="filter" class="filter-select" onchange="this.form.submit()">
+                    <option value="all" selected="@(Model.Filter == "all")">Tất cả trạng thái</option>
+                    <option value="indexed" selected="@(Model.Filter == "indexed")">Đã Index</option>
+                    <option value="pending" selected="@(Model.Filter == "pending")">Chưa Index</option>
                 </select>
             </div>
         </form>
     </div>
+
+    @* ── Document Table ── *@
+    @if (!Model.Documents.Any())
+    {
+        <div class="empty-state">
+            <div class="empty-icon"><i class="bi bi-folder-x"></i></div>
+            <h5>Không tìm thấy tài liệu nào</h5>
+            <p class="text-muted">Thử thay đổi bộ lọc hoặc upload tài liệu mới.</p>
+            @if (User.IsInRole("Teacher"))
+            {
+                <a asp-action="Upload" class="btn btn-primary">
+                    <i class="bi bi-cloud-arrow-up me-2"></i>Upload ngay
+                </a>
+            }
+        </div>
+    }
+    else
+    {
+        <div class="modern-table-wrapper">
+            <table class="modern-table">
+                <thead>
+                    <tr>
+                        <th style="width:48px">#</th>
+                        <th>Tên file</th>
+                        <th style="width:80px">Loại</th>
+                        <th>Môn học</th>
+                        <th style="width:100px">Kích thước</th>
+                        <th style="width:120px">Trạng thái</th>
+                        <th style="width:130px">Ngày upload</th>
+                        @if (User.IsInRole("Teacher"))
+                        {
+                            <th style="width:160px">Hành động</th>
+                        }
+                        else
+                        {
+                            <th style="width:100px">Hành động</th>
+                        }
+                    </tr>
+                </thead>
+                <tbody>
+                    @{int row = 1;}
+                    @foreach (var doc in Model.Documents)
+                    {
+                        <tr class="doc-row">
+                            <td><span class="row-num">@row</span></td>
+                            <td>
+                                <a href="@doc.FilePath" target="_blank" class="doc-link">
+                                    <span class="doc-file-icon @GetFileIconClass(doc.FileType)">
+                                        <i class="bi @GetFileIcon(doc.FileType)"></i>
+                                    </span>
+                                    <span class="doc-name">@doc.FileName</span>
+                                </a>
+                            </td>
+                            <td><span class="file-badge @GetFileBadgeClass(doc.FileType)">@doc.FileType?.TrimStart('.').ToUpper()</span></td>
+                            <td><span class="subject-tag">@(doc.Subject?.SubjectName ?? "N/A")</span></td>
+                            <td class="text-muted small">@(doc.FileSizeKB.HasValue ? $"{doc.FileSizeKB:N0} KB" : "—")</td>
+                            <td>
+                                @if (doc.IsIndexed == true)
+                                {
+                                    <span class="status-badge indexed"><i class="bi bi-check-circle-fill me-1"></i>Đã Index</span>
+                                }
+                                else
+                                {
+                                    <span class="status-badge pending"><i class="bi bi-hourglass me-1"></i>Chờ Index</span>
+                                }
+                            </td>
+                            <td class="text-muted small">@doc.UploadedAt.ToString("dd/MM/yyyy HH:mm")</td>
+                            <td>
+                                <div class="action-btns">
+                                    <a asp-action="Details" asp-route-id="@doc.DocumentID" class="action-btn info" title="Chi tiết">
+                                        <i class="bi bi-eye"></i>
+                                    </a>
+                                    @if (User.IsInRole("Teacher"))
+                                    {
+                                        @if (doc.IsIndexed != true)
+                                        {
+                                            <form asp-action="MarkIndexed" asp-route-id="@doc.DocumentID" method="post" class="d-inline">
+                                                @Html.AntiForgeryToken()
+                                                <button type="submit" class="action-btn success" title="Đánh dấu đã Index">
+                                                    <i class="bi bi-check2"></i>
+                                                </button>
+                                            </form>
+                                        }
+                                        <form asp-action="Delete" asp-route-id="@doc.DocumentID" method="post" class="d-inline"
+                                              onsubmit="return confirm('Xóa tài liệu này?')">
+                                            @Html.AntiForgeryToken()
+                                            <button type="submit" class="action-btn danger" title="Xóa">
+                                                <i class="bi bi-trash3"></i>
+                                            </button>
+                                        </form>
+                                    }
+                                </div>
+                            </td>
+                        </tr>
+                        row++;
+                    }
+                </tbody>
+            </table>
+        </div>
+    }
 </div>
 
-@* Bảng tài liệu *@
-@if (!Model.Documents.Any())
-{
-    <div class="alert alert-info">Không tìm thấy tài liệu nào.</div>
+@functions {
+    string GetFileIcon(string? ext) => ext?.ToLower() switch {
+        ".pdf" => "bi-file-earmark-pdf",
+        ".docx" or ".doc" => "bi-file-earmark-word",
+        ".pptx" or ".ppt" => "bi-file-earmark-slides",
+        _ => "bi-file-earmark"
+    };
+    string GetFileIconClass(string? ext) => ext?.ToLower() switch {
+        ".pdf" => "icon-pdf",
+        ".docx" or ".doc" => "icon-word",
+        ".pptx" or ".ppt" => "icon-ppt",
+        _ => "icon-default"
+    };
+    string GetFileBadgeClass(string? ext) => ext?.ToLower() switch {
+        ".pdf" => "badge-pdf",
+        ".docx" or ".doc" => "badge-word",
+        ".pptx" or ".ppt" => "badge-ppt",
+        _ => "badge-default"
+    };
 }
-else
-{
-    <div class="table-responsive">
-        <table class="table table-hover table-bordered align-middle">
-            <thead class="table-dark">
-                <tr>
-                    <th>#</th>
-                    <th>Tên file</th>
-                    <th>Loại</th>
-                    <th>Môn học</th>
-                    <th>Kích thước</th>
-                    <th>Trạng thái</th>
-                    <th>Ngày upload</th>
-                    <th style="width:180px">Hành động</th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach (var doc in Model.Documents)
-                {
-                    <tr>
-                        <td>@doc.DocumentID</td>
-                        <td>
-                            <a href="@doc.FilePath" target="_blank" title="Xem file">
-                                📄 @doc.FileName
-                            </a>
-                        </td>
-                        <td><span class="badge bg-secondary">@doc.FileType</span></td>
-                        <td>@(doc.Subject?.SubjectName ?? "N/A")</td>
-                        <td>@(doc.FileSizeKB.HasValue ? $"{doc.FileSizeKB:N0} KB" : "—")</td>
-                        <td>
-                            @if (doc.IsIndexed)
-                            {
-                                <span class="badge bg-success">✅ Đã Index</span>
-                            }
-                            else
-                            {
-                                <span class="badge bg-warning text-dark">⏳ Chờ Index</span>
-                            }
-                        </td>
-                        <td>@doc.UploadedAt.ToString("dd/MM/yyyy HH:mm")</td>
-                        <td>
-                            <a asp-action="Details" asp-route-id="@doc.DocumentID" class="btn btn-sm btn-outline-info">🔍 Chi tiết</a>
-                            @if (User.IsInRole("Teacher"))
-                            {
-                                @if (!doc.IsIndexed)
-                                {
-                                    <form asp-action="MarkIndexed" asp-route-id="@doc.DocumentID" method="post" class="d-inline">
-                                        @Html.AntiForgeryToken()
-                                        <button type="submit" class="btn btn-sm btn-success" title="Đánh dấu đã index">
-                                            ✅ Index
-                                        </button>
-                                    </form>
-                                }
-                                <form asp-action="Delete" asp-route-id="@doc.DocumentID" method="post" class="d-inline"
-                                      onsubmit="return confirm('Xóa tài liệu này?')">
-                                    @Html.AntiForgeryToken()
-                                    <button type="submit" class="btn btn-sm btn-outline-danger">🗑 Xóa</button>
-                                </form>
-                            }
-                        </td>
-                    </tr>
-                }
-            </tbody>
-        </table>
-    </div>
 
-    <p class="text-muted small">
-        Tổng: <strong>@Model.Documents.Count()</strong> tài liệu |
-        Đã Index: <strong>@Model.Documents.Count(d => d.IsIndexed)</strong> |
-        Chờ Index: <strong>@Model.Documents.Count(d => !d.IsIndexed)</strong>
-    </p>
+<style>
+/* ── Page Layout ── */
+.doc-page { padding-bottom: 2rem; }
+
+.page-header {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    flex-wrap: wrap;
 }
+.page-icon {
+    width: 56px; height: 56px;
+    background: linear-gradient(135deg, var(--primary), var(--secondary));
+    border-radius: 16px;
+    display: flex; align-items: center; justify-content: center;
+    color: white; font-size: 1.5rem;
+    box-shadow: 0 8px 20px rgba(79,70,229,0.3);
+    flex-shrink: 0;
+}
+.page-title { font-size: 1.75rem; color: var(--text-dark); }
+.page-subtitle { font-size: 0.875rem; color: var(--text-muted); }
+.btn-upload {
+    padding: 0.65rem 1.4rem;
+    border-radius: 12px;
+    font-weight: 600;
+    white-space: nowrap;
+}
+
+/* ── Modern Alert ── */
+.modern-alert {
+    border: none; border-radius: 14px;
+    padding: 1rem 1.25rem;
+    font-weight: 500;
+}
+
+/* ── Stats ── */
+.stats-row {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1rem;
+}
+.stat-card {
+    display: flex; align-items: center; gap: 1rem;
+    background: white;
+    border-radius: 16px;
+    padding: 1.25rem 1.5rem;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+    border: 1px solid rgba(0,0,0,0.05);
+    transition: transform 0.2s, box-shadow 0.2s;
+}
+.stat-card:hover { transform: translateY(-2px); box-shadow: 0 6px 20px rgba(0,0,0,0.1); }
+.stat-icon {
+    width: 48px; height: 48px; border-radius: 12px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.4rem; flex-shrink: 0;
+}
+.stat-card.total .stat-icon { background: #EEF2FF; color: var(--primary); }
+.stat-card.indexed .stat-icon { background: #ECFDF5; color: #059669; }
+.stat-card.pending .stat-icon { background: #FFFBEB; color: #D97706; }
+.stat-number { font-size: 1.75rem; font-weight: 700; line-height: 1; color: var(--text-dark); display: block; }
+.stat-label { font-size: 0.8rem; color: var(--text-muted); font-weight: 500; }
+
+/* ── Filter Bar ── */
+.filter-bar {
+    background: white;
+    border-radius: 14px;
+    padding: 0.875rem 1.25rem;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+    border: 1px solid rgba(0,0,0,0.05);
+}
+.filter-form { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; }
+.filter-group {
+    display: flex; align-items: center; gap: 0.6rem;
+    background: #F8FAFC;
+    border: 1.5px solid #E5E7EB;
+    border-radius: 10px;
+    padding: 0.55rem 0.875rem;
+    transition: border-color 0.2s;
+}
+.filter-group:focus-within { border-color: var(--primary); background: white; }
+.filter-icon { color: var(--text-muted); font-size: 0.95rem; flex-shrink: 0; }
+.filter-select {
+    border: none; background: transparent;
+    font-size: 0.875rem; font-weight: 500; color: var(--text-dark);
+    outline: none; cursor: pointer; width: 100%; min-width: 0;
+    padding: 0;
+}
+.filter-divider {
+    width: 1px; height: 28px;
+    background: #E5E7EB;
+    margin: 0 1rem;
+    justify-self: center;
+}
+
+/* ── Table ── */
+.modern-table-wrapper {
+    background: white;
+    border-radius: 16px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+    border: 1px solid rgba(0,0,0,0.05);
+    overflow: hidden;
+}
+.modern-table {
+    width: 100%; border-collapse: collapse;
+}
+.modern-table thead tr {
+    background: #F8FAFC;
+    border-bottom: 2px solid #E5E7EB;
+}
+.modern-table thead th {
+    padding: 0.9rem 1rem;
+    font-size: 0.75rem;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.05em;
+    color: var(--text-muted);
+}
+.modern-table tbody .doc-row {
+    border-bottom: 1px solid #F1F5F9;
+    transition: background 0.15s;
+}
+.modern-table tbody .doc-row:hover { background: #FAFBFF; }
+.modern-table tbody td { padding: 0.85rem 1rem; vertical-align: middle; }
+
+.row-num {
+    display: inline-flex; align-items: center; justify-content: center;
+    width: 28px; height: 28px; border-radius: 8px;
+    background: #F1F5F9; color: var(--text-muted);
+    font-size: 0.8rem; font-weight: 600;
+}
+
+.doc-link { display: flex; align-items: center; gap: 0.6rem; text-decoration: none; color: var(--text-dark); }
+.doc-link:hover .doc-name { color: var(--primary); }
+.doc-file-icon {
+    width: 32px; height: 32px; border-radius: 8px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 0.9rem; flex-shrink: 0;
+}
+.icon-pdf { background: #FEF2F2; color: #EF4444; }
+.icon-word { background: #EFF6FF; color: #3B82F6; }
+.icon-ppt { background: #FFF7ED; color: #F97316; }
+.icon-default { background: #F1F5F9; color: var(--text-muted); }
+.doc-name { font-size: 0.875rem; font-weight: 500; }
+
+.file-badge {
+    padding: 0.2rem 0.55rem; border-radius: 6px;
+    font-size: 0.7rem; font-weight: 700; letter-spacing: 0.03em;
+}
+.badge-pdf { background: #FEF2F2; color: #DC2626; }
+.badge-word { background: #EFF6FF; color: #2563EB; }
+.badge-ppt { background: #FFF7ED; color: #EA580C; }
+.badge-default { background: #F1F5F9; color: #64748B; }
+
+.subject-tag {
+    display: inline-block;
+    padding: 0.2rem 0.6rem; border-radius: 8px;
+    background: #EEF2FF; color: var(--primary);
+    font-size: 0.78rem; font-weight: 500;
+    max-width: 200px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+}
+
+.status-badge {
+    display: inline-flex; align-items: center;
+    padding: 0.3rem 0.75rem; border-radius: 20px;
+    font-size: 0.78rem; font-weight: 600;
+}
+.status-badge.indexed { background: #ECFDF5; color: #059669; }
+.status-badge.pending { background: #FFFBEB; color: #B45309; }
+
+/* ── Action Buttons ── */
+.action-btns { display: flex; align-items: center; gap: 0.35rem; }
+.action-btn {
+    width: 32px; height: 32px; border-radius: 8px;
+    display: inline-flex; align-items: center; justify-content: center;
+    border: none; cursor: pointer; transition: all 0.2s;
+    font-size: 0.85rem; text-decoration: none;
+}
+.action-btn.info { background: #EFF6FF; color: #3B82F6; }
+.action-btn.info:hover { background: #3B82F6; color: white; }
+.action-btn.success { background: #ECFDF5; color: #059669; }
+.action-btn.success:hover { background: #059669; color: white; }
+.action-btn.danger { background: #FEF2F2; color: #EF4444; }
+.action-btn.danger:hover { background: #EF4444; color: white; }
+
+/* ── Empty State ── */
+.empty-state {
+    text-align: center; padding: 4rem 2rem;
+    background: white; border-radius: 16px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+}
+.empty-icon { font-size: 4rem; color: #D1D5DB; margin-bottom: 1rem; }
+
+@@media (max-width: 768px) {
+    .stats-row { grid-template-columns: 1fr 1fr; }
+    .filter-form { flex-direction: column; align-items: stretch; }
+    .filter-divider { width: 100%; height: 1px; margin: 0.5rem 0; }
+}
+</style>

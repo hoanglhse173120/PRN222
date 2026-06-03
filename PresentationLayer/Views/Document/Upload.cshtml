@@ -3,66 +3,341 @@
     ViewData["Title"] = "Upload Tài liệu";
 }
 
-<div class="row justify-content-center">
-    <div class="col-md-7">
-        <div class="card shadow-sm">
-            <div class="card-header bg-primary text-white">
-                <h4 class="mb-0">⬆ Upload Tài liệu</h4>
+<div class="upload-page">
+    <div class="upload-layout">
+
+        @* ── Left: Form Panel ── *@
+        <div class="upload-panel">
+            <div class="panel-header">
+                <div class="panel-icon">
+                    <i class="bi bi-cloud-arrow-up-fill"></i>
+                </div>
+                <div>
+                    <h2 class="panel-title mb-0">Upload Tài liệu</h2>
+                    <p class="panel-subtitle mb-0">Thêm tài liệu học tập vào hệ thống</p>
+                </div>
             </div>
-            <div class="card-body">
 
-                @if (!Model.Subjects.Any())
-                {
-                    <div class="alert alert-warning">
-                        Chưa có môn học nào. Hãy <a asp-controller="Subject" asp-action="Create">tạo môn học</a> trước.
-                    </div>
-                }
-                else
-                {
-                    <form asp-action="Upload" method="post" enctype="multipart/form-data">
-                        @Html.AntiForgeryToken()
+            @if (!Model.Subjects.Any())
+            {
+                <div class="empty-subjects">
+                    <i class="bi bi-journal-x"></i>
+                    <p>Chưa có môn học nào. Hãy <a asp-controller="Subject" asp-action="Create">tạo môn học</a> trước.</p>
+                </div>
+            }
+            else
+            {
+                <form asp-action="Upload" method="post" enctype="multipart/form-data" id="uploadForm">
+                    @Html.AntiForgeryToken()
 
-                        <div class="mb-3">
-                            <label asp-for="SubjectId" class="form-label fw-bold">Môn học <span class="text-danger">*</span></label>
-                            <select asp-for="SubjectId" class="form-select">
+                    @* Subject Select *@
+                    <div class="form-group-modern mb-4">
+                        <label class="form-label-modern">
+                            <i class="bi bi-journal-bookmark me-2"></i>Môn học <span class="required">*</span>
+                        </label>
+                        <div class="select-wrapper">
+                            <select asp-for="SubjectId" class="form-select-modern">
                                 <option value="">-- Chọn môn học --</option>
                                 @foreach (var s in Model.Subjects)
                                 {
                                     <option value="@s.SubjectID">@s.SubjectName</option>
                                 }
                             </select>
-                            <span asp-validation-for="SubjectId" class="text-danger small"></span>
+                            <i class="bi bi-chevron-down select-arrow"></i>
                         </div>
+                        <span asp-validation-for="SubjectId" class="validation-msg"></span>
+                    </div>
 
-                        <div class="mb-3">
-                            <label asp-for="File" class="form-label fw-bold">Chọn file <span class="text-danger">*</span></label>
-                            <input asp-for="File" type="file" class="form-control"
-                                   accept=".pdf,.docx,.doc,.pptx,.ppt" />
-                            <div class="form-text">Chấp nhận: PDF, DOCX, PPTX (tối đa 50MB)</div>
-                            <span asp-validation-for="File" class="text-danger small"></span>
+                    @* Drag & Drop Zone *@
+                    <div class="form-group-modern mb-4">
+                        <label class="form-label-modern">
+                            <i class="bi bi-file-earmark me-2"></i>File tài liệu <span class="required">*</span>
+                        </label>
+                        <div class="dropzone" id="dropzone" onclick="document.getElementById('fileInput').click()">
+                            <div class="dropzone-icon">
+                                <i class="bi bi-cloud-arrow-up"></i>
+                            </div>
+                            <p class="dropzone-title">Kéo thả file vào đây hoặc <span class="dz-link">click để chọn</span></p>
+                            <p class="dropzone-hint">PDF, DOCX, PPTX — Tối đa 50MB</p>
+                            <div class="file-preview" id="filePreview" style="display:none;">
+                                <i class="bi bi-file-earmark-check-fill text-success me-2"></i>
+                                <span id="fileName"></span>
+                                <span id="fileSize" class="text-muted ms-2 small"></span>
+                            </div>
                         </div>
+                        <input asp-for="File" type="file" id="fileInput" class="d-none"
+                               accept=".pdf,.docx,.doc,.pptx,.ppt" />
+                        <span asp-validation-for="File" class="validation-msg"></span>
+                    </div>
 
-                        <div class="d-flex gap-2">
-                            <button type="submit" class="btn btn-primary">⬆ Upload</button>
-                            <a asp-action="Index" class="btn btn-outline-secondary">Hủy</a>
+                    @* Action Buttons *@
+                    <div class="form-actions">
+                        <button type="submit" class="btn-submit" id="submitBtn">
+                            <i class="bi bi-cloud-arrow-up me-2"></i>Upload tài liệu
+                        </button>
+                        <a asp-action="Index" class="btn-cancel">
+                            <i class="bi bi-arrow-left me-2"></i>Quay lại
+                        </a>
+                    </div>
+                </form>
+            }
+        </div>
+
+        @* ── Right: Info Panel ── *@
+        <div class="info-sidebar">
+            <div class="info-card">
+                <h6 class="info-title"><i class="bi bi-info-circle-fill me-2"></i>Quy trình xử lý</h6>
+                <div class="timeline">
+                    <div class="timeline-item">
+                        <div class="tl-icon tl-upload"><i class="bi bi-cloud-arrow-up"></i></div>
+                        <div class="tl-content">
+                            <strong>Upload file</strong>
+                            <p>File được lưu vào server an toàn</p>
                         </div>
-                    </form>
-                }
+                    </div>
+                    <div class="timeline-item">
+                        <div class="tl-icon tl-pending"><i class="bi bi-hourglass"></i></div>
+                        <div class="tl-content">
+                            <strong>Chờ Index</strong>
+                            <p>Tài liệu hiển thị với trạng thái <span class="badge-small pending">Chờ Index</span></p>
+                        </div>
+                    </div>
+                    <div class="timeline-item">
+                        <div class="tl-icon tl-index"><i class="bi bi-cpu"></i></div>
+                        <div class="tl-content">
+                            <strong>Xử lý AI</strong>
+                            <p>Nhấn nút Index để chunk & embed tài liệu</p>
+                        </div>
+                    </div>
+                    <div class="timeline-item last">
+                        <div class="tl-icon tl-done"><i class="bi bi-check-circle"></i></div>
+                        <div class="tl-content">
+                            <strong>Sẵn sàng</strong>
+                            <p>Chatbot có thể sử dụng tài liệu để trả lời</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="info-card formats-card">
+                <h6 class="info-title"><i class="bi bi-file-earmark-check me-2"></i>Định dạng hỗ trợ</h6>
+                <div class="format-list">
+                    <div class="format-item">
+                        <span class="format-icon pdf"><i class="bi bi-file-earmark-pdf"></i></span>
+                        <span class="format-name">PDF</span>
+                        <span class="format-size text-muted small">≤ 50MB</span>
+                    </div>
+                    <div class="format-item">
+                        <span class="format-icon word"><i class="bi bi-file-earmark-word"></i></span>
+                        <span class="format-name">DOCX / DOC</span>
+                        <span class="format-size text-muted small">≤ 50MB</span>
+                    </div>
+                    <div class="format-item">
+                        <span class="format-icon ppt"><i class="bi bi-file-earmark-slides"></i></span>
+                        <span class="format-name">PPTX / PPT</span>
+                        <span class="format-size text-muted small">≤ 50MB</span>
+                    </div>
+                </div>
             </div>
         </div>
 
-        <div class="card mt-3">
-            <div class="card-body">
-                <h6 class="fw-bold">ℹ️ Quy trình sau khi upload:</h6>
-                <ol class="mb-0 small text-muted">
-                    <li>File được lưu vào server</li>
-                    <li>Tài liệu hiển thị trong danh sách với trạng thái <span class="badge bg-warning text-dark">Chờ Index</span></li>
-                    <li>Nhấn nút <strong>✅ Index</strong> để bắt đầu chunk & embed tài liệu</li>
-                    <li>Sau khi index, chatbot có thể sử dụng tài liệu này để trả lời</li>
-                </ol>
-            </div>
-        </div>
     </div>
 </div>
 
-@section Scripts { @{ await Html.RenderPartialAsync("_ValidationScriptsPartial"); } }
+@section Scripts {
+    @{ await Html.RenderPartialAsync("_ValidationScriptsPartial"); }
+    <script>
+    const dropzone = document.getElementById('dropzone');
+    const fileInput = document.getElementById('fileInput');
+    const filePreview = document.getElementById('filePreview');
+    const fileNameEl = document.getElementById('fileName');
+    const fileSizeEl = document.getElementById('fileSize');
+
+    fileInput.addEventListener('change', (e) => updatePreview(e.target.files[0]));
+
+    dropzone.addEventListener('dragover', e => { e.preventDefault(); dropzone.classList.add('drag-over'); });
+    dropzone.addEventListener('dragleave', () => dropzone.classList.remove('drag-over'));
+    dropzone.addEventListener('drop', e => {
+        e.preventDefault();
+        dropzone.classList.remove('drag-over');
+        const file = e.dataTransfer.files[0];
+        if (file) {
+            const dt = new DataTransfer();
+            dt.items.add(file);
+            fileInput.files = dt.files;
+            updatePreview(file);
+        }
+    });
+
+    function updatePreview(file) {
+        if (!file) return;
+        filePreview.style.display = 'flex';
+        fileNameEl.textContent = file.name;
+        const kb = file.size / 1024;
+        fileSizeEl.textContent = kb > 1024 ? `(${(kb/1024).toFixed(1)} MB)` : `(${Math.round(kb)} KB)`;
+        dropzone.classList.add('has-file');
+    }
+
+    document.getElementById('uploadForm').addEventListener('submit', () => {
+        document.getElementById('submitBtn').innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Đang upload...';
+        document.getElementById('submitBtn').disabled = true;
+    });
+    </script>
+}
+
+<style>
+/* ── Upload Page ── */
+.upload-layout {
+    display: grid;
+    grid-template-columns: 1fr 360px;
+    gap: 1.5rem;
+    align-items: start;
+}
+
+/* ── Panel ── */
+.upload-panel {
+    background: white;
+    border-radius: 20px;
+    padding: 2rem;
+    box-shadow: 0 2px 20px rgba(0,0,0,0.07);
+    border: 1px solid rgba(0,0,0,0.05);
+}
+.panel-header {
+    display: flex; align-items: center; gap: 1rem;
+    margin-bottom: 2rem;
+    padding-bottom: 1.5rem;
+    border-bottom: 1px solid #F1F5F9;
+}
+.panel-icon {
+    width: 52px; height: 52px; border-radius: 14px;
+    background: linear-gradient(135deg, var(--primary), var(--secondary));
+    display: flex; align-items: center; justify-content: center;
+    color: white; font-size: 1.4rem;
+    box-shadow: 0 6px 18px rgba(79,70,229,0.3);
+}
+.panel-title { font-size: 1.4rem; color: var(--text-dark); }
+.panel-subtitle { font-size: 0.85rem; color: var(--text-muted); }
+
+/* ── Form Modern ── */
+.form-label-modern {
+    display: block; font-weight: 600;
+    font-size: 0.875rem; color: var(--text-dark);
+    margin-bottom: 0.6rem;
+}
+.required { color: #EF4444; }
+.validation-msg { font-size: 0.8rem; color: #EF4444; display: block; margin-top: 0.35rem; }
+
+.select-wrapper { position: relative; }
+.form-select-modern {
+    width: 100%; padding: 0.8rem 1rem;
+    border: 2px solid #E5E7EB; border-radius: 12px;
+    font-size: 0.9rem; color: var(--text-dark);
+    background: #FAFAFA; appearance: none;
+    transition: border-color 0.2s, box-shadow 0.2s;
+    outline: none;
+}
+.form-select-modern:focus {
+    border-color: var(--primary);
+    box-shadow: 0 0 0 4px rgba(79,70,229,0.1);
+    background: white;
+}
+.select-arrow {
+    position: absolute; right: 1rem; top: 50%;
+    transform: translateY(-50%);
+    color: var(--text-muted); pointer-events: none;
+}
+
+/* ── Dropzone ── */
+.dropzone {
+    border: 2px dashed #D1D5DB; border-radius: 16px;
+    padding: 2.5rem 1.5rem; text-align: center;
+    cursor: pointer; transition: all 0.25s;
+    background: #FAFAFA;
+}
+.dropzone:hover, .dropzone.drag-over {
+    border-color: var(--primary);
+    background: #EEF2FF;
+}
+.dropzone.has-file { border-color: #059669; background: #F0FDF4; }
+.dropzone-icon { font-size: 2.5rem; color: #D1D5DB; margin-bottom: 0.75rem; transition: color 0.25s; }
+.dropzone:hover .dropzone-icon { color: var(--primary); }
+.dropzone.has-file .dropzone-icon { color: #059669; }
+.dropzone-title { font-weight: 500; color: var(--text-dark); margin-bottom: 0.35rem; font-size: 0.95rem; }
+.dz-link { color: var(--primary); font-weight: 600; text-decoration: underline; }
+.dropzone-hint { font-size: 0.8rem; color: var(--text-muted); margin: 0; }
+.file-preview {
+    display: flex; align-items: center; justify-content: center;
+    margin-top: 1rem; font-size: 0.875rem; font-weight: 500;
+    color: #059669; flex-wrap: wrap; gap: 0.25rem;
+}
+
+/* ── Form Actions ── */
+.form-actions { display: flex; gap: 0.75rem; margin-top: 1.5rem; }
+.btn-submit {
+    flex: 1; padding: 0.85rem 1.5rem;
+    background: linear-gradient(135deg, var(--primary), var(--secondary));
+    color: white; border: none; border-radius: 12px;
+    font-weight: 600; font-size: 0.95rem; cursor: pointer;
+    transition: all 0.3s; box-shadow: 0 4px 14px rgba(79,70,229,0.3);
+}
+.btn-submit:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(79,70,229,0.4); }
+.btn-submit:disabled { opacity: 0.7; transform: none; cursor: not-allowed; }
+.btn-cancel {
+    padding: 0.85rem 1.25rem; border-radius: 12px;
+    border: 2px solid #E5E7EB; color: var(--text-muted);
+    text-decoration: none; font-weight: 600; font-size: 0.9rem;
+    transition: all 0.2s; background: white;
+}
+.btn-cancel:hover { border-color: var(--text-muted); color: var(--text-dark); }
+
+/* ── Info Sidebar ── */
+.info-card {
+    background: white; border-radius: 16px;
+    padding: 1.5rem;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+    border: 1px solid rgba(0,0,0,0.05);
+    margin-bottom: 1rem;
+}
+.info-title { font-size: 0.9rem; font-weight: 700; color: var(--text-dark); margin-bottom: 1.25rem; }
+
+/* Timeline */
+.timeline { display: flex; flex-direction: column; gap: 1rem; }
+.timeline-item { display: flex; gap: 0.875rem; align-items: flex-start; }
+.tl-icon {
+    width: 36px; height: 36px; border-radius: 10px; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center; font-size: 1rem;
+}
+.tl-upload { background: #EEF2FF; color: var(--primary); }
+.tl-pending { background: #FFFBEB; color: #D97706; }
+.tl-index { background: #EFF6FF; color: #2563EB; }
+.tl-done { background: #ECFDF5; color: #059669; }
+.tl-content strong { font-size: 0.875rem; color: var(--text-dark); display: block; }
+.tl-content p { font-size: 0.8rem; color: var(--text-muted); margin: 0.2rem 0 0; }
+.badge-small.pending {
+    display: inline-block; padding: 0.1rem 0.45rem;
+    background: #FFFBEB; color: #B45309;
+    border-radius: 6px; font-size: 0.7rem; font-weight: 600;
+}
+
+/* Formats */
+.format-list { display: flex; flex-direction: column; gap: 0.6rem; }
+.format-item { display: flex; align-items: center; gap: 0.75rem; }
+.format-icon {
+    width: 32px; height: 32px; border-radius: 8px;
+    display: flex; align-items: center; justify-content: center; font-size: 0.9rem;
+}
+.format-icon.pdf { background: #FEF2F2; color: #EF4444; }
+.format-icon.word { background: #EFF6FF; color: #3B82F6; }
+.format-icon.ppt { background: #FFF7ED; color: #F97316; }
+.format-name { font-size: 0.875rem; font-weight: 600; color: var(--text-dark); flex: 1; }
+
+.empty-subjects {
+    text-align: center; padding: 3rem 1rem;
+    color: var(--text-muted);
+}
+.empty-subjects i { font-size: 3rem; margin-bottom: 1rem; display: block; }
+
+@@media (max-width: 900px) {
+    .upload-layout { grid-template-columns: 1fr; }
+}
+</style>

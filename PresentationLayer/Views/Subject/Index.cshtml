@@ -1,57 +1,186 @@
 @model IEnumerable<ServiceLayer.DTOs.SubjectDto>
 @{
     ViewData["Title"] = "Quản lý Môn học";
+    var subjects = Model.ToList();
 }
 
-<div class="d-flex justify-content-between align-items-center mb-3">
-    <h2><i class="bi bi-book"></i> Quản lý Môn học</h2>
-    <a asp-action="Create" class="btn btn-primary">+ Thêm môn học</a>
+<div class="subject-page">
+
+    @* ── Header ── *@
+    <div class="page-header mb-4">
+        <div class="d-flex align-items-center gap-3">
+            <div class="page-icon subject-icon">
+                <i class="bi bi-journal-bookmark-fill"></i>
+            </div>
+            <div>
+                <h1 class="page-title mb-0">Quản lý Môn học</h1>
+                <p class="page-subtitle mb-0">@subjects.Count môn học trong hệ thống</p>
+            </div>
+        </div>
+        <a asp-action="Create" class="btn btn-primary btn-add ms-auto">
+            <i class="bi bi-plus-lg me-2"></i>Thêm môn học
+        </a>
+    </div>
+
+    @if (TempData["Success"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show modern-alert mb-4" role="alert">
+            <i class="bi bi-check-circle-fill me-2"></i>@TempData["Success"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
+        </div>
+    }
+
+    @* ── Cards or Empty ── *@
+    @if (!subjects.Any())
+    {
+        <div class="empty-state">
+            <div class="empty-icon"><i class="bi bi-journal-x"></i></div>
+            <h5>Chưa có môn học nào</h5>
+            <p class="text-muted mb-3">Tạo môn học đầu tiên để bắt đầu quản lý tài liệu.</p>
+            <a asp-action="Create" class="btn btn-primary">
+                <i class="bi bi-plus-lg me-2"></i>Tạo môn học
+            </a>
+        </div>
+    }
+    else
+    {
+        <div class="subjects-grid">
+            @foreach (var s in subjects)
+            {
+                <div class="subject-card">
+                    <div class="sc-header">
+                        <div class="sc-avatar">
+                            @s.SubjectName.Substring(0, Math.Min(2, s.SubjectName.Length)).ToUpper()
+                        </div>
+                        <div class="sc-meta">
+                        <h6 class="sc-title">@s.SubjectName</h6>
+                            <span class="sc-date">
+                                <i class="bi bi-calendar3 me-1"></i>@s.CreatedAt.ToString("dd/MM/yyyy")
+                            </span>
+                        </div>
+                    </div>
+                    @if (!string.IsNullOrEmpty(s.Description))
+                    {
+                        <p class="sc-desc">@s.Description</p>
+                    }
+                    else
+                    {
+                        <p class="sc-desc no-desc">Chưa có mô tả</p>
+                    }
+                    <div class="sc-footer">
+                        <a asp-action="Edit" asp-route-id="@s.SubjectID" class="sc-btn edit">
+                            <i class="bi bi-pencil me-1"></i>Sửa
+                        </a>
+                        <form asp-action="Delete" asp-route-id="@s.SubjectID" method="post" class="d-inline"
+                              onsubmit="return confirm('Xóa môn học sẽ xóa toàn bộ tài liệu liên quan. Xác nhận?')">
+                            @Html.AntiForgeryToken()
+                            <button type="submit" class="sc-btn delete">
+                                <i class="bi bi-trash3 me-1"></i>Xóa
+                            </button>
+                        </form>
+                    </div>
+                </div>
+            }
+            @* Add New Card *@
+            <a asp-action="Create" class="subject-card add-card">
+                <div class="add-icon"><i class="bi bi-plus-lg"></i></div>
+                <span class="add-label">Thêm môn học mới</span>
+            </a>
+        </div>
+    }
 </div>
 
-@if (TempData["Success"] != null)
-{
-    <div class="alert alert-success alert-dismissible fade show" role="alert">
-        @TempData["Success"]
-        <button type="button" class="btn-close" data-bs-dismiss="alert"></button>
-    </div>
-}
+<style>
+.subject-page { padding-bottom: 2rem; }
 
-@if (!Model.Any())
-{
-    <div class="alert alert-info">Chưa có môn học nào. Hãy tạo môn học đầu tiên!</div>
+/* ── Header (reuse doc styles) ── */
+.page-header { display: flex; align-items: center; gap: 1rem; flex-wrap: wrap; }
+.page-icon {
+    width: 56px; height: 56px; border-radius: 16px;
+    display: flex; align-items: center; justify-content: center;
+    color: white; font-size: 1.5rem; flex-shrink: 0;
+    box-shadow: 0 8px 20px rgba(0,0,0,0.2);
 }
-else
-{
-    <div class="table-responsive">
-        <table class="table table-hover table-bordered align-middle">
-            <thead class="table-dark">
-                <tr>
-                    <th>#</th>
-                    <th>Tên môn học</th>
-                    <th>Mô tả</th>
-                    <th>Ngày tạo</th>
-                    <th style="width:160px">Hành động</th>
-                </tr>
-            </thead>
-            <tbody>
-                @foreach (var s in Model)
-                {
-                    <tr>
-                        <td>@s.SubjectID</td>
-                        <td><strong>@s.SubjectName</strong></td>
-                        <td>@(s.Description ?? "—")</td>
-                        <td>@s.CreatedAt.ToString("dd/MM/yyyy")</td>
-                        <td>
-                            <a asp-action="Edit" asp-route-id="@s.SubjectID" class="btn btn-sm btn-outline-warning">Sửa</a>
-                            <form asp-action="Delete" asp-route-id="@s.SubjectID" method="post" class="d-inline"
-                                  onsubmit="return confirm('Xóa môn học sẽ xóa toàn bộ tài liệu liên quan. Xác nhận?')">
-                                @Html.AntiForgeryToken()
-                                <button type="submit" class="btn btn-sm btn-outline-danger">Xóa</button>
-                            </form>
-                        </td>
-                    </tr>
-                }
-            </tbody>
-        </table>
-    </div>
+.subject-icon { background: linear-gradient(135deg, #7C3AED, #A855F7); box-shadow: 0 8px 20px rgba(124,58,237,0.3); }
+.page-title { font-size: 1.75rem; color: var(--text-dark); }
+.page-subtitle { font-size: 0.875rem; color: var(--text-muted); }
+.btn-add {
+    padding: 0.65rem 1.4rem;
+    border-radius: 12px; font-weight: 600;
+    white-space: nowrap;
 }
+.modern-alert { border: none; border-radius: 14px; padding: 1rem 1.25rem; font-weight: 500; }
+
+/* ── Subject Grid ── */
+.subjects-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 1.25rem;
+}
+.subject-card {
+    background: white;
+    border-radius: 18px;
+    padding: 1.5rem;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+    border: 1px solid rgba(0,0,0,0.05);
+    display: flex; flex-direction: column; gap: 0.875rem;
+    transition: transform 0.25s, box-shadow 0.25s;
+}
+.subject-card:hover { transform: translateY(-3px); box-shadow: 0 8px 24px rgba(0,0,0,0.1); }
+
+.sc-header { display: flex; align-items: center; gap: 0.875rem; }
+.sc-avatar {
+    width: 44px; height: 44px; border-radius: 12px; flex-shrink: 0;
+    background: linear-gradient(135deg, #7C3AED, #A855F7);
+    color: white; font-weight: 700; font-size: 0.9rem;
+    display: flex; align-items: center; justify-content: center;
+}
+.sc-title {
+    font-size: 0.95rem; font-weight: 700; margin: 0 0 0.2rem;
+    color: var(--text-dark);
+    display: -webkit-box; -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical; overflow: hidden;
+    line-height: 1.4;
+}
+.sc-date { font-size: 0.75rem; color: var(--text-muted); }
+.sc-desc {
+    font-size: 0.85rem; color: var(--text-muted);
+    margin: 0; line-height: 1.5;
+    display: -webkit-box; -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical; overflow: hidden;
+    flex: 1;
+}
+.sc-desc.no-desc { font-style: italic; }
+
+.sc-footer { display: flex; gap: 0.5rem; padding-top: 0.875rem; border-top: 1px solid #F1F5F9; }
+.sc-btn {
+    flex: 1; padding: 0.5rem; border-radius: 10px;
+    font-size: 0.82rem; font-weight: 600; text-align: center;
+    border: none; cursor: pointer; text-decoration: none;
+    transition: all 0.2s; display: inline-block;
+}
+.sc-btn.edit { background: #EEF2FF; color: var(--primary); }
+.sc-btn.edit:hover { background: var(--primary); color: white; }
+.sc-btn.delete { background: #FEF2F2; color: #EF4444; }
+.sc-btn.delete:hover { background: #EF4444; color: white; }
+
+/* ── Add Card ── */
+.add-card {
+    border: 2px dashed #D1D5DB;
+    box-shadow: none; text-decoration: none;
+    align-items: center; justify-content: center;
+    min-height: 160px; color: var(--text-muted);
+    background: #FAFAFA;
+}
+.add-card:hover { border-color: var(--primary); color: var(--primary); background: #EEF2FF; box-shadow: none; }
+.add-icon { font-size: 2rem; margin-bottom: 0.5rem; }
+.add-label { font-size: 0.875rem; font-weight: 600; }
+
+/* ── Empty ── */
+.empty-state {
+    text-align: center; padding: 4rem 2rem;
+    background: white; border-radius: 16px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.06);
+}
+.empty-icon { font-size: 4rem; color: #D1D5DB; margin-bottom: 1rem; }
+</style>
