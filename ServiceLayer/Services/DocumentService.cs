@@ -54,11 +54,11 @@ public class DocumentService : IDocumentService
     {
         var doc = new Document
         {
-            SubjectID = subjectId,
+            SubjectId = subjectId,
             FileName = fileName,
             FileType = fileType,
             FilePath = filePath,
-            FileSizeKB = fileSizeKB,
+            FileSizeKb = fileSizeKB,
             IsIndexed = false,
             UploadedAt = DateTime.Now
         };
@@ -71,15 +71,15 @@ public class DocumentService : IDocumentService
     {
         return new DocumentDto
         {
-            DocumentID = doc.DocumentID,
-            SubjectID = doc.SubjectID,
+            DocumentID = doc.DocumentId,
+            SubjectID = doc.SubjectId,
             FileName = doc.FileName,
             FileType = doc.FileType,
             FilePath = doc.FilePath,
-            FileSizeKB = doc.FileSizeKB,
-            IsIndexed = doc.IsIndexed,
-            UploadedAt = doc.UploadedAt,
-            Subject = doc.Subject != null ? new SubjectDto { SubjectID = doc.Subject.SubjectID, SubjectName = doc.Subject.SubjectName } : null
+            FileSizeKB = doc.FileSizeKb,
+            IsIndexed = doc.IsIndexed ?? false,
+            UploadedAt = doc.UploadedAt ?? DateTime.MinValue,
+            Subject = doc.Subject != null ? new SubjectDto { SubjectID = doc.Subject.SubjectId, SubjectName = doc.Subject.SubjectName } : null
         };
     }
 
@@ -90,23 +90,23 @@ public class DocumentService : IDocumentService
 
         return new DocumentDetailsDto
         {
-            DocumentID = doc.DocumentID,
+            DocumentID = doc.DocumentId,
             FileName = doc.FileName,
             FileType = doc.FileType,
             FilePath = doc.FilePath,
-            FileSizeKB = doc.FileSizeKB,
-            IsIndexed = doc.IsIndexed,
-            UploadedAt = doc.UploadedAt,
+            FileSizeKB = doc.FileSizeKb,
+            IsIndexed = doc.IsIndexed ?? false,
+            UploadedAt = doc.UploadedAt ?? DateTime.MinValue,
             Subject = doc.Subject != null
-                ? new SubjectDto { SubjectID = doc.Subject.SubjectID, SubjectName = doc.Subject.SubjectName }
+                ? new SubjectDto { SubjectID = doc.Subject.SubjectId, SubjectName = doc.Subject.SubjectName }
                 : null,
             Chunks = doc.DocumentChunks.Select(c => new DocumentChunkDto
             {
-                ChunkID = c.ChunkID,
-                DocumentID = c.DocumentID,
+                ChunkID = c.ChunkId,
+                DocumentID = c.DocumentId,
                 ChunkIndex = c.ChunkIndex,
                 ChunkContent = c.ChunkContent,
-                CreatedAt = c.CreatedAt,
+                CreatedAt = c.CreatedAt ?? DateTime.MinValue,
                 EmbeddingJson = c.Embedding
             }).ToList()
         };
@@ -138,7 +138,7 @@ public class DocumentService : IDocumentService
         var doc = await _repo.GetByIdAsync(documentId)
             ?? throw new InvalidOperationException($"Không tìm thấy tài liệu ID={documentId}");
 
-        if (doc.IsIndexed)
+        if (doc.IsIndexed == true)
             return 0; // đã index rồi, bỏ qua
 
         // Tính đường dẫn vật lý từ đường dẫn tương đối lưu trong DB
@@ -176,7 +176,7 @@ public class DocumentService : IDocumentService
         {
             var chunk = new DocumentChunk
             {
-                DocumentID = documentId,
+                DocumentId = documentId,
                 ChunkContent = chunks[i],
                 ChunkIndex = i + 1,
                 Embedding = JsonSerializer.Serialize(responseData.Embeddings[i]),

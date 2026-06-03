@@ -17,10 +17,10 @@ public class SubjectService : ISubjectService
         var entities = await _repo.GetAllAsync();
         return entities.Select(e => new SubjectDto
         {
-            SubjectID = e.SubjectID,
+            SubjectID = e.SubjectId,
             SubjectName = e.SubjectName,
             Description = e.Description,
-            CreatedAt = e.CreatedAt
+            CreatedAt = e.CreatedAt ?? DateTime.MinValue
         });
     }
 
@@ -30,10 +30,10 @@ public class SubjectService : ISubjectService
         if (e == null) return null;
         return new SubjectDto
         {
-            SubjectID = e.SubjectID,
+            SubjectID = e.SubjectId,
             SubjectName = e.SubjectName,
             Description = e.Description,
-            CreatedAt = e.CreatedAt
+            CreatedAt = e.CreatedAt ?? DateTime.MinValue
         };
     }
 

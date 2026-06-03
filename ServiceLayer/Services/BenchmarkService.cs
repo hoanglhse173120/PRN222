@@ -32,7 +32,7 @@ public class BenchmarkService : IBenchmarkService
     }
 
     public async Task<IEnumerable<BenchmarkResult>> GetResultsByConfigAsync(int configId)
-        => await _resultRepo.FindAsync(r => r.ConfigID == configId);
+        => await _resultRepo.FindAsync(r => r.ConfigId == configId);
 
     public async Task<IEnumerable<TestQuestion>> GetAllQuestionsAsync()
         => await _questionRepo.GetAllAsync();

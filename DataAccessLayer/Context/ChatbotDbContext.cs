@@ -23,60 +23,68 @@ public class ChatbotDbContext : IdentityDbContext<IdentityUser>
     {
         base.OnModelCreating(modelBuilder);
 
+        // Define Primary Keys for entities that do not follow the default convention
+        modelBuilder.Entity<DocumentChunk>().HasKey(c => c.ChunkId);
+        modelBuilder.Entity<ChatSession>().HasKey(s => s.SessionId);
+        modelBuilder.Entity<ChatMessage>().HasKey(m => m.MessageId);
+        modelBuilder.Entity<MessageSource>().HasKey(ms => ms.SourceId);
+        modelBuilder.Entity<ExperimentConfig>().HasKey(e => e.ConfigId);
+        modelBuilder.Entity<TestQuestion>().HasKey(q => q.QuestionId);
+        modelBuilder.Entity<BenchmarkResult>().HasKey(b => b.ResultId);
         // Subject → Documents (1:N, cascade delete)
         modelBuilder.Entity<Document>()
             .HasOne(d => d.Subject)
             .WithMany(s => s.Documents)
-            .HasForeignKey(d => d.SubjectID)
+            .HasForeignKey(d => d.SubjectId)
             .OnDelete(DeleteBehavior.Cascade);
 
         // Document → DocumentChunks (1:N, cascade delete)
         modelBuilder.Entity<DocumentChunk>()
             .HasOne(c => c.Document)
             .WithMany(d => d.DocumentChunks)
-            .HasForeignKey(c => c.DocumentID)
+            .HasForeignKey(c => c.DocumentId)
             .OnDelete(DeleteBehavior.Cascade);
 
         // ChatSession → ChatMessages (1:N, cascade delete)
         modelBuilder.Entity<ChatMessage>()
-            .HasOne(m => m.ChatSession)
+            .HasOne(m => m.Session)
             .WithMany(s => s.ChatMessages)
-            .HasForeignKey(m => m.SessionID)
+            .HasForeignKey(m => m.SessionId)
             .OnDelete(DeleteBehavior.Cascade);
 
         // ChatMessage → MessageSources (1:N, cascade delete)
         modelBuilder.Entity<MessageSource>()
-            .HasOne(ms => ms.ChatMessage)
+            .HasOne(ms => ms.Message)
             .WithMany(m => m.MessageSources)
-            .HasForeignKey(ms => ms.MessageID)
+            .HasForeignKey(ms => ms.MessageId)
             .OnDelete(DeleteBehavior.Cascade);
 
         // DocumentChunk → MessageSources (1:N, no cascade to avoid multiple paths)
         modelBuilder.Entity<MessageSource>()
-            .HasOne(ms => ms.DocumentChunk)
+            .HasOne(ms => ms.Chunk)
             .WithMany(c => c.MessageSources)
-            .HasForeignKey(ms => ms.ChunkID)
+            .HasForeignKey(ms => ms.ChunkId)
             .OnDelete(DeleteBehavior.NoAction);
 
         // ExperimentConfig → BenchmarkResults (1:N, cascade delete)
         modelBuilder.Entity<BenchmarkResult>()
-            .HasOne(b => b.ExperimentConfig)
+            .HasOne(b => b.Config)
             .WithMany(e => e.BenchmarkResults)
-            .HasForeignKey(b => b.ConfigID)
+            .HasForeignKey(b => b.ConfigId)
             .OnDelete(DeleteBehavior.Cascade);
 
         // TestQuestion → BenchmarkResults (1:N, no cascade)
         modelBuilder.Entity<BenchmarkResult>()
-            .HasOne(b => b.TestQuestion)
+            .HasOne(b => b.Question)
             .WithMany(q => q.BenchmarkResults)
-            .HasForeignKey(b => b.QuestionID)
+            .HasForeignKey(b => b.QuestionId)
             .OnDelete(DeleteBehavior.NoAction);
 
         // Subject → TestQuestions (1:N, nullable FK)
         modelBuilder.Entity<TestQuestion>()
             .HasOne(q => q.Subject)
             .WithMany(s => s.TestQuestions)
-            .HasForeignKey(q => q.SubjectID)
+            .HasForeignKey(q => q.SubjectId)
             .OnDelete(DeleteBehavior.SetNull);
 
         // Column constraints

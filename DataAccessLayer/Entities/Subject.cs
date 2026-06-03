@@ -1,13 +1,19 @@
+﻿using System;
+using System.Collections.Generic;
+
 namespace DataAccessLayer.Entities;
 
-public class Subject
+public partial class Subject
 {
-    public int SubjectID { get; set; }
-    public string SubjectName { get; set; } = null!;
-    public string? Description { get; set; }
-    public DateTime CreatedAt { get; set; } = DateTime.Now;
+    public int SubjectId { get; set; }
 
-    // Navigation
-    public ICollection<Document> Documents { get; set; } = new List<Document>();
-    public ICollection<TestQuestion> TestQuestions { get; set; } = new List<TestQuestion>();
+    public string SubjectName { get; set; } = null!;
+
+    public string? Description { get; set; }
+
+    public DateTime? CreatedAt { get; set; }
+
+    public virtual ICollection<Document> Documents { get; set; } = new List<Document>();
+
+    public virtual ICollection<TestQuestion> TestQuestions { get; set; } = new List<TestQuestion>();
 }

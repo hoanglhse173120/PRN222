@@ -1,21 +1,29 @@
-using System.ComponentModel.DataAnnotations;
+﻿using System;
+using System.Collections.Generic;
 
 namespace DataAccessLayer.Entities;
 
-public class BenchmarkResult
+public partial class BenchmarkResult
 {
-    [Key]
-    public int ResultID { get; set; }
-    public int ConfigID { get; set; }
-    public int QuestionID { get; set; }
-    public string? ModelResponse { get; set; }
-    public double? Faithfulness { get; set; }
-    public double? AnswerRelevance { get; set; }
-    public double? ContextPrecision { get; set; }
-    public double? ContextRecall { get; set; }
-    public DateTime EvaluatedAt { get; set; } = DateTime.Now;
+    public int ResultId { get; set; }
 
-    // Navigation
-    public ExperimentConfig ExperimentConfig { get; set; } = null!;
-    public TestQuestion TestQuestion { get; set; } = null!;
+    public int ConfigId { get; set; }
+
+    public int QuestionId { get; set; }
+
+    public string? ModelResponse { get; set; }
+
+    public double? Faithfulness { get; set; }
+
+    public double? AnswerRelevance { get; set; }
+
+    public double? ContextPrecision { get; set; }
+
+    public double? ContextRecall { get; set; }
+
+    public DateTime? EvaluatedAt { get; set; }
+
+    public virtual ExperimentConfig Config { get; set; } = null!;
+
+    public virtual TestQuestion Question { get; set; } = null!;
 }

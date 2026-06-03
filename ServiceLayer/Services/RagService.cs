@@ -85,8 +85,8 @@ public class RagService : IRagService
 
         var sources = scoredChunks.Select(x => new RagChunkResultDto
         {
-            ChunkID = x.chunk.ChunkID,
-            DocumentID = x.chunk.DocumentID,
+            ChunkID = x.chunk.ChunkId,
+            DocumentID = x.chunk.DocumentId,
             FileName = x.chunk.Document.FileName,
             SubjectName = x.chunk.Document.Subject?.SubjectName,
             ChunkContent = x.chunk.ChunkContent.Length > 300

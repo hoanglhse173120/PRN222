@@ -1,3 +1,4 @@
+using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using PresentationLayer.ViewModels;
 using ServiceLayer.Interfaces;
@@ -22,6 +23,7 @@ public class DocumentController : Controller
     }
 
     // GET: /Document  (danh sách tài liệu, lọc theo môn & trạng thái)
+    [Authorize(Roles = "Teacher,Student")]
     public async Task<IActionResult> Index(int? subjectId, string filter = "all")
     {
         var subjects = await _subjectService.GetAllAsync();
@@ -47,6 +49,7 @@ public class DocumentController : Controller
     }
 
     // GET: /Document/Upload
+    [Authorize(Roles = "Teacher")]
     public async Task<IActionResult> Upload()
     {
         var vm = new DocumentUploadViewModel
@@ -57,6 +60,7 @@ public class DocumentController : Controller
     }
 
     // POST: /Document/Upload
+    [Authorize(Roles = "Teacher")]
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Upload(DocumentUploadViewModel vm)
@@ -100,6 +104,7 @@ public class DocumentController : Controller
     }
 
     // POST: /Document/MarkIndexed/5  (extract text → chunk → lưu DB)
+    [Authorize(Roles = "Teacher")]
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> MarkIndexed(int id)
@@ -117,6 +122,7 @@ public class DocumentController : Controller
     }
 
     // POST: /Document/Delete/5
+    [Authorize(Roles = "Teacher")]
     [HttpPost]
     [ValidateAntiForgeryToken]
     public async Task<IActionResult> Delete(int id)
@@ -127,6 +133,7 @@ public class DocumentController : Controller
     }
 
     // GET: /Document/Details/5
+    [Authorize(Roles = "Teacher,Student")]
     public async Task<IActionResult> Details(int id)
     {
         var details = await _documentService.GetDetailsWithChunksAsync(id);

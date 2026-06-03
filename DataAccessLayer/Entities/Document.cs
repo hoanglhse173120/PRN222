@@ -1,17 +1,27 @@
+﻿using System;
+using System.Collections.Generic;
+
 namespace DataAccessLayer.Entities;
 
-public class Document
+public partial class Document
 {
-    public int DocumentID { get; set; }
-    public int SubjectID { get; set; }
-    public string FileName { get; set; } = null!;
-    public string? FileType { get; set; }
-    public string? FilePath { get; set; }
-    public long? FileSizeKB { get; set; }
-    public bool IsIndexed { get; set; } = false;
-    public DateTime UploadedAt { get; set; } = DateTime.Now;
+    public int DocumentId { get; set; }
 
-    // Navigation
-    public Subject Subject { get; set; } = null!;
-    public ICollection<DocumentChunk> DocumentChunks { get; set; } = new List<DocumentChunk>();
+    public int SubjectId { get; set; }
+
+    public string FileName { get; set; } = null!;
+
+    public string? FileType { get; set; }
+
+    public string? FilePath { get; set; }
+
+    public long? FileSizeKb { get; set; }
+
+    public bool? IsIndexed { get; set; }
+
+    public DateTime? UploadedAt { get; set; }
+
+    public virtual ICollection<DocumentChunk> DocumentChunks { get; set; } = new List<DocumentChunk>();
+
+    public virtual Subject Subject { get; set; } = null!;
 }

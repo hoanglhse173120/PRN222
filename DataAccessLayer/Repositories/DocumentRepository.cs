@@ -17,7 +17,7 @@ public class DocumentRepository : Repository<Document>, IDocumentRepository
 
     public async Task<IEnumerable<Document>> GetBySubjectAsync(int subjectId)
         => await _context.Documents
-            .Where(d => d.SubjectID == subjectId)
+            .Where(d => d.SubjectId == subjectId)
             .Include(d => d.Subject)
             .OrderByDescending(d => d.UploadedAt)
             .ToListAsync();
@@ -26,18 +26,18 @@ public class DocumentRepository : Repository<Document>, IDocumentRepository
         => await _context.Documents
             .Include(d => d.Subject)
             .Include(d => d.DocumentChunks.OrderBy(c => c.ChunkIndex))
-            .FirstOrDefaultAsync(d => d.DocumentID == documentId);
+            .FirstOrDefaultAsync(d => d.DocumentId == documentId);
 
     public async Task<IEnumerable<DocumentChunk>> GetAllIndexedChunksAsync()
         => await _context.DocumentChunks
-            .Where(c => c.Embedding != null && c.Document.IsIndexed)
+            .Where(c => c.Embedding != null && c.Document.IsIndexed == true)
             .Include(c => c.Document)
                 .ThenInclude(d => d.Subject)
             .ToListAsync();
 
     public async Task<IEnumerable<Document>> GetIndexedDocumentsAsync()
         => await _context.Documents
-            .Where(d => d.IsIndexed)
+            .Where(d => d.IsIndexed == true)
             .Include(d => d.Subject)
             .ToListAsync();
 }
