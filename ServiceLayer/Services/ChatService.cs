@@ -94,6 +94,16 @@ public class ChatService : IChatService
         }
     }
 
+    public async Task RenameSessionAsync(int sessionId, string newName)
+    {
+        var session = await _sessionRepo.GetByIdAsync(sessionId);
+        if (session != null)
+        {
+            session.SessionName = newName;
+            await _sessionRepo.SaveChangesAsync();
+        }
+    }
+
     public async Task<ChatMessageDto> AddMessageWithSourcesAsync(
         int sessionId, string role, string messageText,
         List<RagChunkResultDto> sources)

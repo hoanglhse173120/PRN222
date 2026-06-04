@@ -1,279 +1,674 @@
 @model PresentationLayer.ViewModels.ChatSessionViewModel
 @{
     ViewData["Title"] = Model.Session.SessionName;
+    Layout = null;
 }
-
-<style>
-    body {
-        background-color: var(--background-light);
-    }
-    .chat-wrapper {
-        display: flex;
-        flex-direction: column;
-        height: 75vh;
-        max-width: 900px;
-        margin: 0 auto;
-        background: var(--glass-bg);
-        backdrop-filter: blur(12px);
-        border: 1px solid var(--glass-border);
-        border-radius: 20px;
-        box-shadow: 0 10px 40px rgba(0,0,0,0.05);
-        overflow: hidden;
-    }
-    .chat-container {
-        flex-grow: 1;
-        overflow-y: auto;
-        padding: 2rem 1.5rem;
-        scroll-behavior: smooth;
-    }
-    .chat-container::-webkit-scrollbar {
-        width: 6px;
-    }
-    .chat-container::-webkit-scrollbar-thumb {
-        background: #cbd5e1;
-        border-radius: 10px;
-    }
-    .msg-row {
-        display: flex;
-        margin-bottom: 2rem;
-        gap: 1.25rem;
-        animation: fadeInUp 0.4s ease-out forwards;
-    }
-    .msg-row.user {
-        flex-direction: row-reverse;
-    }
-    .avatar {
-        width: 42px;
-        height: 42px;
-        border-radius: 50%;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        flex-shrink: 0;
-        font-size: 1.2rem;
-        box-shadow: 0 4px 10px rgba(0,0,0,0.08);
-    }
-    .avatar.ai {
-        background: linear-gradient(135deg, var(--primary), var(--secondary));
-        color: white;
-    }
-    .avatar.user {
-        background-color: white;
-        color: var(--text-dark);
-        border: 1px solid #e5e7eb;
-    }
-    .msg-bubble {
-        max-width: 75%;
-        padding: 14px 20px;
-        border-radius: 18px;
-        line-height: 1.6;
-        word-wrap: break-word;
-        font-size: 1.05rem;
-        box-shadow: 0 2px 8px rgba(0,0,0,0.02);
-    }
-    .msg-row.user .msg-bubble {
-        background-color: var(--primary);
-        color: white;
-        border-bottom-right-radius: 4px;
-    }
-    .msg-row.ai .msg-bubble {
-        background-color: white;
-        color: var(--text-dark);
-        border-bottom-left-radius: 4px;
-        border: 1px solid #f3f4f6;
-    }
-    
-    /* Box nhập liệu */
-    .input-wrapper {
-        padding: 1rem 1.5rem;
-        background: rgba(255, 255, 255, 0.9);
-        border-top: 1px solid #f3f4f6;
-    }
-    .input-box {
-        background: white;
-        border: 1px solid #e5e7eb;
-        border-radius: 30px;
-        box-shadow: 0 4px 15px rgba(0,0,0,0.03);
-        padding: 8px 12px 8px 24px;
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        transition: all 0.3s ease;
-    }
-    .input-box:focus-within {
-        border-color: var(--primary);
-        box-shadow: 0 4px 20px rgba(79, 70, 229, 0.15);
-    }
-    .input-box input {
-        border: none;
-        box-shadow: none;
-        background: transparent;
-        flex-grow: 1;
-        padding: 10px 0;
-        font-size: 1rem;
-        color: var(--text-dark);
-    }
-    .input-box input:focus {
-        outline: none;
-        box-shadow: none;
-    }
-    .input-box input::placeholder {
-        color: #9ca3af;
-    }
-    .send-btn {
-        background: linear-gradient(135deg, var(--primary), var(--secondary));
-        color: white;
-        border: none;
-        border-radius: 50%;
-        width: 40px;
-        height: 40px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        transition: transform 0.2s, box-shadow 0.2s;
-    }
-    .send-btn:hover {
-        transform: scale(1.05);
-        box-shadow: 0 4px 12px rgba(79, 70, 229, 0.3);
-    }
-    .send-btn:disabled {
-        opacity: 0.5;
-        cursor: not-allowed;
-        transform: none;
-    }
-    @@keyframes fadeInUp {
-        from { opacity: 0; transform: translateY(10px); }
-        to { opacity: 1; transform: translateY(0); }
-    }
-</style>
-
-<div class="d-flex justify-content-between align-items-center mb-3 px-3 pt-2 fade-in-up">
-    <h5 class="fw-bold m-0" style="color: var(--primary);">
-        <a asp-action="Index" class="text-decoration-none text-muted me-2" style="font-size: 1.2rem;"><i class="bi bi-arrow-left-circle"></i></a>
-        @Model.Session.SessionName
-    </h5>
-</div>
-
-<div class="chat-wrapper fade-in-up">
-    <!-- Chat History -->
-    <div class="chat-container" id="chatBox">
-        @if (!Model.Session.ChatMessages.Any())
-        {
-            <div class="h-100 d-flex flex-column align-items-center justify-content-center text-muted">
-                <div class="avatar ai mb-4" style="width: 70px; height: 70px; font-size: 2.2rem; box-shadow: 0 10px 25px rgba(79, 70, 229, 0.3);">✨</div>
-                <h3 class="fw-bold text-dark">Xin chào!</h3>
-                <p class="text-center px-4">Tôi là trợ lý AI thông minh dựa trên RAG.<br>Hãy đặt câu hỏi về tài liệu môn học của bạn.</p>
-            </div>
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - Chatbot RAG</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <style>
+        :root {
+            --primary: #6366f1;
+            --secondary: #8b5cf6;
+            --sidebar-w: 270px;
+            --sidebar-collapsed-w: 56px;
+            --sidebar-bg: #0f0f1a;
+            --chat-bg: #f7f7fc;
+            --transition: 0.28s cubic-bezier(.4,0,.2,1);
         }
-        else
-        {
-            @foreach (var msg in Model.Session.ChatMessages.OrderBy(m => m.Timestamp))
-            {
-                var isUser = msg.Role == "user";
-                <div class="msg-row @(isUser ? "user" : "ai")">
-                    <div class="avatar @(isUser ? "user" : "ai")">
-                        @if (isUser) { <text>👤</text> } else { <text>✨</text> }
-                    </div>
-                    <div class="msg-bubble">
-                        @{
-                            // Render **bold** và newline
-                            var rendered = System.Text.RegularExpressions.Regex
-                                .Replace(msg.MessageText, @"\*\*(.*?)\*\*", "<strong>$1</strong>")
-                                .Replace("\n", "<br/>");
-                        }
-                        @Html.Raw(rendered)
-                    </div>
-                </div>
-            }
-        }
-    </div>
 
-    <!-- Chat Input -->
-    <div class="input-wrapper">
-        <form id="chatForm" asp-action="SendMessageAjax" method="post">
-            @Html.AntiForgeryToken()
-            <input type="hidden" name="sessionId" value="@Model.Session.SessionID" />
-            <div class="input-box">
-                <input type="text" id="newMessage" name="newMessage" class="form-control border-0 shadow-none" 
-                       placeholder="Hỏi AI về tài liệu..." required autocomplete="off" autofocus />
-                <button type="submit" class="send-btn" id="sendBtn">
-                    <i class="bi bi-send-fill"></i>
+        *, *::before, *::after { box-sizing: border-box; }
+        html, body { height: 100%; margin: 0; padding: 0; font-family: 'Inter', sans-serif; background: var(--chat-bg); }
+
+        /* ─── App shell ─── */
+        .chat-app {
+            display: flex;
+            height: 100vh;
+            overflow: hidden;
+        }
+
+        /* ─── Sidebar ─── */
+        .sidebar {
+            width: var(--sidebar-w);
+            min-width: var(--sidebar-w);
+            background: var(--sidebar-bg);
+            display: flex;
+            flex-direction: column;
+            color: #e5e7eb;
+            transition: width var(--transition), min-width var(--transition);
+            overflow: hidden;
+            position: relative;
+            z-index: 10;
+        }
+
+        .sidebar.collapsed {
+            width: var(--sidebar-collapsed-w);
+            min-width: var(--sidebar-collapsed-w);
+        }
+
+        /* Logo row */
+        .sidebar-header {
+            padding: 0.9rem 0.85rem 0.8rem;
+            border-bottom: 1px solid rgba(255,255,255,0.07);
+            flex-shrink: 0;
+            position: relative;
+        }
+        .sidebar.collapsed .sidebar-header {
+            padding: 0.7rem 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .header-row {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 0.75rem;
+        }
+        /* Khi thu: .header-row ẩn, toggle btn hiện riêng */
+        .sidebar.collapsed .header-row { display: none; }
+
+        /* Toggle btn nổi độc lập khi collapsed */
+        .toggle-btn-collapsed {
+            display: none;
+            background: rgba(255,255,255,0.07);
+            border: none;
+            color: #9ca3af;
+            width: 32px; height: 32px;
+            border-radius: 8px;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: background 0.15s, color 0.15s;
+            font-size: 1rem;
+            flex-shrink: 0;
+        }
+        .toggle-btn-collapsed:hover { background: rgba(255,255,255,0.13); color: #e5e7eb; }
+        .sidebar.collapsed .toggle-btn-collapsed { display: flex; }
+
+        .sidebar-logo {
+            display: flex;
+            align-items: center;
+            gap: 0.55rem;
+            font-size: 1rem;
+            font-weight: 700;
+            text-decoration: none;
+            background: linear-gradient(135deg, #818cf8, #a78bfa);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            white-space: nowrap;
+            overflow: hidden;
+            opacity: 1;
+            transition: opacity var(--transition);
+        }
+        .sidebar.collapsed .sidebar-logo { display: none; }
+
+        .toggle-btn {
+            background: rgba(255,255,255,0.07);
+            border: none;
+            color: #9ca3af;
+            width: 32px; height: 32px;
+            border-radius: 8px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            flex-shrink: 0;
+            transition: background 0.15s, color 0.15s;
+            font-size: 1rem;
+        }
+        .toggle-btn:hover { background: rgba(255,255,255,0.13); color: #e5e7eb; }
+
+        /* New chat btn */
+        .new-chat-form { flex-shrink: 0; overflow: hidden; }
+
+        .new-chat-btn {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 0.5rem;
+            width: 100%;
+            padding: 0.55rem 0.85rem;
+            background: rgba(99,102,241,0.14);
+            color: #a5b4fc;
+            border: 1px solid rgba(99,102,241,0.28);
+            border-radius: 9px;
+            font-size: 0.88rem;
+            font-weight: 500;
+            cursor: pointer;
+            text-decoration: none;
+            transition: background 0.2s, color 0.2s;
+            white-space: nowrap;
+            overflow: hidden;
+        }
+        .new-chat-btn:hover { background: rgba(99,102,241,0.28); color: #c7d2fe; }
+
+        .new-chat-btn .btn-label {
+            transition: opacity var(--transition), max-width var(--transition);
+            max-width: 200px;
+            overflow: hidden;
+        }
+        .sidebar.collapsed .new-chat-btn .btn-label { max-width: 0; opacity: 0; display: none; }
+        /* Khi thu: nút + căn giữa trong 56px */
+        .sidebar.collapsed .new-chat-form {
+            display: flex;
+            justify-content: center;
+            padding: 0;
+        }
+        .sidebar.collapsed .new-chat-btn {
+            width: 36px;
+            height: 36px;
+            padding: 0;
+            margin: 0 auto;
+            justify-content: center;
+            border-radius: 9px;
+            gap: 0;
+        }
+
+        /* Session list */
+        .sidebar-section-title {
+            padding: 0.85rem 1rem 0.35rem;
+            font-size: 0.68rem;
+            font-weight: 600;
+            letter-spacing: 0.08em;
+            color: #6b7280;
+            text-transform: uppercase;
+            white-space: nowrap;
+            overflow: hidden;
+            transition: opacity var(--transition);
+            flex-shrink: 0;
+        }
+        .sidebar.collapsed .sidebar-section-title { opacity: 0; }
+
+        .session-list {
+            flex-grow: 1;
+            overflow-y: auto;
+            overflow-x: hidden;
+            padding: 0 0.4rem 1rem;
+        }
+        .session-list::-webkit-scrollbar { width: 4px; }
+        .session-list::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.08); border-radius: 4px; }
+
+        .session-item {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0.55rem 0.7rem;
+            border-radius: 8px;
+            margin-bottom: 2px;
+            cursor: pointer;
+            transition: background 0.15s;
+            text-decoration: none;
+            color: #d1d5db;
+            overflow: hidden;
+            min-height: 36px;
+        }
+        .session-item:hover { background: rgba(255,255,255,0.06); color: #f3f4f6; }
+        .session-item.active { background: rgba(99,102,241,0.2); color: #a5b4fc; }
+
+        .session-item-inner {
+            display: flex;
+            align-items: center;
+            gap: 0.6rem;
+            overflow: hidden;
+            flex-grow: 1;
+        }
+
+        .session-icon { flex-shrink: 0; font-size: 0.82rem; opacity: 0.55; }
+
+        .session-item-name {
+            font-size: 0.85rem;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+            flex-grow: 1;
+            transition: opacity var(--transition), max-width var(--transition);
+            max-width: 160px;
+        }
+        .sidebar.collapsed .session-item-name { max-width: 0; opacity: 0; }
+
+        .session-item-delete {
+            background: none;
+            border: none;
+            color: #6b7280;
+            padding: 2px 4px;
+            border-radius: 4px;
+            cursor: pointer;
+            opacity: 0;
+            transition: opacity 0.15s, color 0.15s;
+            font-size: 0.78rem;
+            flex-shrink: 0;
+        }
+        .session-item:hover .session-item-delete { opacity: 1; }
+        .session-item-delete:hover { color: #f87171; }
+        .sidebar.collapsed .session-item-delete { display: none; }
+
+        /* Footer */
+        .sidebar-footer {
+            padding: 0.85rem;
+            border-top: 1px solid rgba(255,255,255,0.07);
+            font-size: 0.78rem;
+            color: #6b7280;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-shrink: 0;
+            overflow: hidden;
+            white-space: nowrap;
+        }
+
+        .footer-user { overflow: hidden; text-overflow: ellipsis; max-width: 140px; transition: opacity var(--transition), max-width var(--transition); }
+        .footer-logout { color: #9ca3af; text-decoration: none; font-size: 0.74rem; transition: color 0.15s, opacity var(--transition); flex-shrink: 0; }
+        .footer-logout:hover { color: #e5e7eb; }
+        .sidebar.collapsed .footer-user { max-width: 0; opacity: 0; }
+        .sidebar.collapsed .footer-logout { opacity: 0; pointer-events: none; }
+
+        /* ─── Chat main ─── */
+        .chat-main {
+            flex-grow: 1;
+            display: flex;
+            flex-direction: column;
+            overflow: hidden;
+            background: var(--chat-bg);
+            transition: flex var(--transition);
+            min-width: 0;
+        }
+
+        /* Topbar */
+        .chat-topbar {
+            display: flex;
+            align-items: center;
+            gap: 0.75rem;
+            padding: 0.8rem 1.75rem;
+            background: rgba(255,255,255,0.88);
+            backdrop-filter: blur(14px);
+            border-bottom: 1px solid rgba(0,0,0,0.06);
+            flex-shrink: 0;
+        }
+
+        .topbar-title {
+            font-size: 0.97rem;
+            font-weight: 600;
+            color: #111827;
+            flex-grow: 1;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .topbar-badge {
+            font-size: 0.72rem;
+            background: rgba(99,102,241,0.08);
+            color: var(--primary);
+            border: 1px solid rgba(99,102,241,0.2);
+            padding: 0.22rem 0.7rem;
+            border-radius: 999px;
+            font-weight: 500;
+            flex-shrink: 0;
+        }
+
+        /* Messages */
+        .chat-messages {
+            flex-grow: 1;
+            overflow-y: auto;
+            padding: 2rem 2rem 1rem;
+            scroll-behavior: smooth;
+        }
+        .chat-messages::-webkit-scrollbar { width: 6px; }
+        .chat-messages::-webkit-scrollbar-thumb { background: #dde1e7; border-radius: 6px; }
+
+        .msgs-inner {
+            max-width: 820px;
+            margin: 0 auto;
+        }
+
+        /* Empty state */
+        .empty-state {
+            height: 100%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            color: #9ca3af;
+            gap: 1rem;
+            padding: 3rem 0;
+        }
+
+        .empty-icon {
+            width: 72px; height: 72px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            display: flex; align-items: center; justify-content: center;
+            font-size: 2rem;
+            box-shadow: 0 10px 28px rgba(99,102,241,0.28);
+        }
+
+        /* Msg rows */
+        .msg-row {
+            display: flex;
+            margin-bottom: 1.75rem;
+            gap: 0.85rem;
+            animation: fadeInUp 0.3s ease-out;
+        }
+        .msg-row.user { flex-direction: row-reverse; }
+
+        .avatar {
+            width: 36px; height: 36px;
+            border-radius: 50%;
+            display: flex; align-items: center; justify-content: center;
+            flex-shrink: 0;
+            font-size: 1.05rem;
+        }
+        .avatar.ai { background: linear-gradient(135deg, var(--primary), var(--secondary)); color: white; box-shadow: 0 3px 10px rgba(99,102,241,0.28); }
+        .avatar.user { background: white; border: 1px solid #e5e7eb; box-shadow: 0 2px 6px rgba(0,0,0,0.06); }
+
+        .msg-bubble {
+            padding: 11px 17px;
+            border-radius: 16px;
+            line-height: 1.65;
+            word-wrap: break-word;
+            font-size: 0.93rem;
+            max-width: 78%;
+        }
+        .msg-row.user .msg-bubble {
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white;
+            border-bottom-right-radius: 4px;
+            box-shadow: 0 4px 14px rgba(99,102,241,0.22);
+        }
+        .msg-row.ai .msg-bubble {
+            background: white;
+            color: #1f2937;
+            border-bottom-left-radius: 4px;
+            border: 1px solid #e9ecf0;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.04);
+        }
+
+        /* Input area */
+        .chat-input-area {
+            padding: 1rem 2rem 1.25rem;
+            background: var(--chat-bg);
+            flex-shrink: 0;
+        }
+
+        .input-shell {
+            max-width: 820px;
+            margin: 0 auto;
+            background: white;
+            border: 1px solid #e0e3ea;
+            border-radius: 14px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.05);
+            display: flex;
+            align-items: center;
+            padding: 7px 9px 7px 18px;
+            gap: 10px;
+            transition: border-color 0.22s, box-shadow 0.22s;
+        }
+        .input-shell:focus-within { border-color: var(--primary); box-shadow: 0 4px 22px rgba(99,102,241,0.14); }
+        .input-shell input {
+            flex-grow: 1; border: none; background: transparent; outline: none;
+            font-size: 0.95rem; color: #1f2937; padding: 8px 0;
+        }
+        .input-shell input::placeholder { color: #9ca3af; }
+
+        .send-btn {
+            width: 38px; height: 38px;
+            border-radius: 11px;
+            background: linear-gradient(135deg, var(--primary), var(--secondary));
+            color: white; border: none;
+            display: flex; align-items: center; justify-content: center;
+            flex-shrink: 0;
+            transition: transform 0.18s, box-shadow 0.18s, opacity 0.18s;
+            cursor: pointer;
+        }
+        .send-btn:hover { transform: scale(1.06); box-shadow: 0 4px 14px rgba(99,102,241,0.32); }
+        .send-btn:disabled { opacity: 0.42; transform: none; cursor: not-allowed; }
+
+        .input-hint { text-align: center; font-size: 0.7rem; color: #b0b7c3; margin-top: 0.5rem; }
+
+        @@keyframes fadeInUp {
+            from { opacity: 0; transform: translateY(7px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+    </style>
+</head>
+<body>
+<div class="chat-app" id="chatApp">
+
+    <!-- ─── Sidebar ─── -->
+    <aside class="sidebar" id="sidebar">
+        <div class="sidebar-header">
+            <!-- Nút toggle khi THU (luôn căn giữa) -->
+            <button class="toggle-btn-collapsed" id="toggleBtnCollapsed" title="Mở sidebar">
+                <i class="bi bi-layout-sidebar-reverse"></i>
+            </button>
+
+            <!-- Row logo + toggle khi MỞ -->
+            <div class="header-row">
+                <a href="/" class="sidebar-logo"><span>✨</span> Chatbot RAG</a>
+                <button class="toggle-btn" id="toggleBtn" title="Thu sidebar">
+                    <i class="bi bi-layout-sidebar-reverse"></i>
                 </button>
             </div>
-        </form>
-    </div>
+            <form asp-controller="Chat" asp-action="Create" method="post" class="new-chat-form">
+                @Html.AntiForgeryToken()
+                <button type="submit" class="new-chat-btn">
+                    <i class="bi bi-plus-lg"></i>
+                    <span class="btn-label">Phiên chat mới</span>
+                </button>
+            </form>
+        </div>
+
+        <div class="sidebar-section-title">Lịch sử trò chuyện</div>
+
+        <nav class="session-list">
+            @if (Model.AllSessions != null)
+            {
+                @foreach (var s in Model.AllSessions.OrderByDescending(x => x.CreatedAt))
+                {
+                    <a href="@Url.Action("Session", "Chat", new { id = s.SessionID })"
+                       class="session-item @(s.SessionID == Model.Session.SessionID ? "active" : "")"
+                       id="session-item-@s.SessionID"
+                       title="@s.SessionName">
+                        <div class="session-item-inner">
+                            <i class="bi bi-chat-text session-icon"></i>
+                            <span class="session-item-name" id="session-name-@s.SessionID">@s.SessionName</span>
+                        </div>
+                        <form asp-controller="Chat" asp-action="Delete" asp-route-id="@s.SessionID" method="post"
+                              onsubmit="return confirm('Xóa phiên này?')" style="display:inline;" onclick="event.stopPropagation()">
+                            @Html.AntiForgeryToken()
+                            <button type="submit" class="session-item-delete" title="Xóa">
+                                <i class="bi bi-trash3"></i>
+                            </button>
+                        </form>
+                    </a>
+                }
+            }
+        </nav>
+
+        <div class="sidebar-footer">
+            <span class="footer-user" title="@User.Identity?.Name">@User.Identity?.Name</span>
+            <a class="footer-logout"
+               asp-area="Identity" asp-page="/Account/Logout"
+               asp-route-returnUrl="@Url.Action("Index", "Home")">Đăng xuất</a>
+        </div>
+    </aside>
+
+    <!-- ─── Chat main ─── -->
+    <main class="chat-main">
+        <div class="chat-topbar">
+            <span class="topbar-title" id="topbarTitle">
+                <i class="bi bi-chat-dots me-1" style="color:var(--primary);opacity:.7;"></i>
+                <span id="topbarSessionName">@Model.Session.SessionName</span>
+            </span>
+            <span class="topbar-badge"><i class="bi bi-stars me-1"></i>RAG · Groq</span>
+        </div>
+
+        <div class="chat-messages" id="chatBox">
+            <div class="msgs-inner" id="msgsInner">
+                @if (!Model.Session.ChatMessages.Any())
+                {
+                    <div class="empty-state" id="emptyState">
+                        <div class="empty-icon">✨</div>
+                        <h3 style="color:#1f2937;font-weight:700;margin:0;">Xin chào!</h3>
+                        <p style="text-align:center;max-width:380px;margin:0;font-size:0.95rem;">
+                            Tôi là trợ lý AI thông minh dựa trên RAG.<br>
+                            Hãy đặt câu hỏi về tài liệu môn học của bạn.
+                        </p>
+                    </div>
+                }
+                else
+                {
+                    @foreach (var msg in Model.Session.ChatMessages.OrderBy(m => m.Timestamp))
+                    {
+                        var isUser = msg.Role == "user";
+                        <div class="msg-row @(isUser ? "user" : "ai")">
+                            <div class="avatar @(isUser ? "user" : "ai")">
+                                @if (isUser) { <text>👤</text> } else { <text>✨</text> }
+                            </div>
+                            <div class="msg-bubble">
+                                @{
+                                    var rendered = System.Text.RegularExpressions.Regex
+                                        .Replace(msg.MessageText, @"\*\*(.*?)\*\*", "<strong>$1</strong>")
+                                        .Replace("\n", "<br/>");
+                                }
+                                @Html.Raw(rendered)
+                            </div>
+                        </div>
+                    }
+                }
+            </div>
+        </div>
+
+        <div class="chat-input-area">
+            <form id="chatForm" asp-controller="Chat" asp-action="SendMessageAjax" method="post">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="sessionId" value="@Model.Session.SessionID" />
+                <div class="input-shell">
+                    <input type="text" id="newMessage" name="newMessage"
+                           placeholder="Hỏi AI về tài liệu..." required autocomplete="off" autofocus />
+                    <button type="submit" class="send-btn" id="sendBtn">
+                        <i class="bi bi-send-fill"></i>
+                    </button>
+                </div>
+            </form>
+            <p class="input-hint">AI có thể sai. Hãy kiểm chứng thông tin quan trọng.</p>
+        </div>
+    </main>
 </div>
 
-@section Scripts {
-    <script>
-        const chatBox = document.getElementById("chatBox");
-        // Scroll to bottom immediately
+<script src="~/lib/jquery/dist/jquery.min.js"></script>
+<script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+<script>
+    const CURRENT_SESSION_ID = @Model.Session.SessionID;
+
+    /* ── Sidebar toggle ── */
+    const sidebar            = document.getElementById('sidebar');
+    const toggleBtn          = document.getElementById('toggleBtn');
+    const toggleBtnCollapsed = document.getElementById('toggleBtnCollapsed');
+    const COLLAPSED_KEY = 'sidebar_collapsed';
+
+    function setSidebar(collapsed) {
+        sidebar.classList.toggle('collapsed', collapsed);
+        localStorage.setItem(COLLAPSED_KEY, collapsed ? '1' : '0');
+    }
+
+    // Khôi phục trạng thái từ localStorage
+    if (localStorage.getItem(COLLAPSED_KEY) === '1') setSidebar(true);
+
+    toggleBtn.addEventListener('click', () => setSidebar(true));
+    toggleBtnCollapsed.addEventListener('click', () => setSidebar(false));
+
+    /* ── Chat logic ── */
+    const chatBox  = document.getElementById('chatBox');
+    const msgsInner = document.getElementById('msgsInner');
+    const form     = document.getElementById('chatForm');
+    const input    = document.getElementById('newMessage');
+    const sendBtn  = document.getElementById('sendBtn');
+
+    chatBox.scrollTop = chatBox.scrollHeight;
+
+    form.addEventListener('submit', async function (e) {
+        e.preventDefault();
+        const messageText = input.value.trim();
+        if (!messageText) return;
+
+        // Xóa empty-state
+        const emptyState = document.getElementById('emptyState');
+        if (emptyState) emptyState.remove();
+
+        // Hiển thị tin nhắn user
+        msgsInner.insertAdjacentHTML('beforeend', `
+            <div class="msg-row user">
+                <div class="avatar user">👤</div>
+                <div class="msg-bubble">${escapeHtml(messageText)}</div>
+            </div>`);
+
+        // Loading indicator
+        const loadingId = 'loading-' + Date.now();
+        msgsInner.insertAdjacentHTML('beforeend', `
+            <div class="msg-row ai" id="${loadingId}">
+                <div class="avatar ai">✨</div>
+                <div class="msg-bubble" style="background:transparent;border:none;box-shadow:none;display:flex;align-items:center;gap:6px;">
+                    <span class="spinner-grow spinner-grow-sm text-primary"></span>
+                    <span class="spinner-grow spinner-grow-sm text-secondary" style="animation-delay:.18s;"></span>
+                    <span class="spinner-grow spinner-grow-sm text-primary" style="animation-delay:.36s;"></span>
+                </div>
+            </div>`);
+
         chatBox.scrollTop = chatBox.scrollHeight;
+        input.value = '';
+        sendBtn.disabled = true;
 
-        const form = document.getElementById("chatForm");
-        const input = document.getElementById("newMessage");
-        const sendBtn = document.getElementById("sendBtn");
+        const formData = new FormData(form);
+        formData.set('newMessage', messageText);
 
-        form.addEventListener("submit", async function (e) {
-            e.preventDefault();
-            const messageText = input.value.trim();
-            if (!messageText) return;
+        try {
+            const resp = await fetch(form.action, { method: 'POST', body: formData });
+            const data = await resp.json();
+            const loadingEl = document.getElementById(loadingId);
 
-            // Xóa câu chào mặc định nếu có
-            const emptyState = document.querySelector(".h-100.d-flex");
-            if (emptyState) emptyState.remove();
+            if (data.success) {
+                loadingEl.querySelector('.msg-bubble').outerHTML =
+                    `<div class="msg-bubble">${data.answerHtml}</div>`;
 
-            // Hiển thị tin nhắn của User
-            const userHtml = `
-                <div class="msg-row user">
-                    <div class="avatar user">👤</div>
-                    <div class="msg-bubble">
-                        ${messageText}
-                    </div>
-                </div>`;
-            chatBox.insertAdjacentHTML("beforeend", userHtml);
-
-            // Hiển thị icon Loading của AI
-            const loadingId = "loading-" + Date.now();
-            const aiHtml = `
-                <div class="msg-row ai" id="${loadingId}">
-                    <div class="avatar ai">✨</div>
-                    <div class="msg-bubble d-flex align-items-center gap-2" style="background-color: transparent; border: none; box-shadow: none;">
-                        <span class="spinner-grow spinner-grow-sm text-primary" role="status" aria-hidden="true"></span>
-                        <span class="spinner-grow spinner-grow-sm text-secondary" role="status" aria-hidden="true" style="animation-delay: 0.2s;"></span>
-                        <span class="spinner-grow spinner-grow-sm text-primary" role="status" aria-hidden="true" style="animation-delay: 0.4s;"></span>
-                    </div>
-                </div>`;
-            chatBox.insertAdjacentHTML("beforeend", aiHtml);
-            
-            chatBox.scrollTop = chatBox.scrollHeight;
-            input.value = "";
-            sendBtn.disabled = true;
-
-            const formData = new FormData(form);
-            formData.set("newMessage", messageText);
-
-            try {
-                const response = await fetch(form.action, {
-                    method: "POST",
-                    body: formData
-                });
-                
-                const data = await response.json();
-                const loadingBubble = document.getElementById(loadingId);
-                
-                if (data.success) {
-                    loadingBubble.querySelector(".msg-bubble").outerHTML = `<div class="msg-bubble">${data.answerHtml}</div>`;
-                } else {
-                    loadingBubble.querySelector(".msg-bubble").outerHTML = `<div class="msg-bubble text-danger bg-light">⚠️ Lỗi xử lý tin nhắn.</div>`;
+                // Cập nhật tên sidebar + topbar nếu là tin nhắn đầu tiên
+                if (data.sessionName) {
+                    const nameEl = document.getElementById('session-name-' + CURRENT_SESSION_ID);
+                    if (nameEl) {
+                        nameEl.textContent = data.sessionName;
+                        nameEl.closest('.session-item')?.setAttribute('title', data.sessionName);
+                    }
+                    document.getElementById('topbarSessionName').textContent = data.sessionName;
+                    document.title = data.sessionName + ' - Chatbot RAG';
                 }
-            } catch (error) {
-                document.getElementById(loadingId).querySelector(".msg-bubble").outerHTML = `<div class="msg-bubble text-danger bg-light">⚠️ Lỗi kết nối tới máy chủ.</div>`;
-            } finally {
-                sendBtn.disabled = false;
-                input.focus();
-                chatBox.scrollTop = chatBox.scrollHeight;
+            } else {
+                loadingEl.querySelector('.msg-bubble').outerHTML =
+                    `<div class="msg-bubble text-danger">⚠️ Lỗi xử lý tin nhắn.</div>`;
             }
-        });
-    </script>
-}
+        } catch {
+            document.getElementById(loadingId).querySelector('.msg-bubble').outerHTML =
+                `<div class="msg-bubble text-danger">⚠️ Lỗi kết nối tới máy chủ.</div>`;
+        } finally {
+            sendBtn.disabled = false;
+            input.focus();
+            chatBox.scrollTop = chatBox.scrollHeight;
+        }
+    });
+
+    function escapeHtml(str) {
+        return str.replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;');
+    }
+</script>
+</body>
+</html>

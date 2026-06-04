@@ -24,7 +24,10 @@ public class RagService : IRagService
         _config = config;
     }
 
-    public async Task<RagResponseDto> AskAsync(string question, int topK = 5)
+    public async Task<RagResponseDto> AskAsync(
+        string question,
+        IEnumerable<ChatMessageDto>? conversationHistory = null,
+        int topK = 5)
     {
         topK = int.TryParse(_config["Rag:TopK"], out var cfgK) ? cfgK : topK;
         var minScore = double.TryParse(_config["Rag:MinScore"], out var ms) ? ms : 0.35;
@@ -81,7 +84,7 @@ public class RagService : IRagService
             contextBuilder.AppendLine();
         }
 
-        var answer = await CallLlmAsync(question, contextBuilder.ToString());
+        var answer = await CallLlmAsync(question, contextBuilder.ToString(), conversationHistory);
 
         var sources = scoredChunks.Select(x => new RagChunkResultDto
         {
@@ -133,8 +136,11 @@ public class RagService : IRagService
         return data.Embeddings[0].ToArray();
     }
 
-    // ── Call Groq REST API ───────────────────────────────────────────────
-    private async Task<string> CallLlmAsync(string question, string context)
+    // ── Call Groq REST API (multi-turn) ─────────────────────────────────────
+    private async Task<string> CallLlmAsync(
+        string question,
+        string context,
+        IEnumerable<ChatMessageDto>? conversationHistory = null)
     {
         var apiKey = _config["Groq:ApiKey"];
         var model = _config["Groq:Model"] ?? "llama3-70b-8192";
@@ -142,21 +148,47 @@ public class RagService : IRagService
         if (string.IsNullOrWhiteSpace(apiKey))
             return "[Cấu hình] Chưa cài API key Groq. Vui lòng thêm Groq:ApiKey vào appsettings.json.";
 
+        // ── Xây dựng mảng messages cho LLM (multi-turn) ─────────────────────
+        var systemPrompt = "Bạn là trợ lý học tập. Chỉ trả lời dựa trên tài liệu được cung cấp. " +
+            "BẮT BUỘC 100% dùng tiếng Việt (chữ Quốc ngữ). Nghiêm cấm dùng chữ Hán (Chinese characters) như 模, 隐藏, 暴. " +
+            "Đối với thuật ngữ chuyên ngành (như Modularity, Encapsulation...), hãy giữ nguyên tiếng Anh hoặc dịch sang tiếng Việt thuần thục " +
+            "(ví dụ: tính mô-đun hóa, tính đóng gói). " +
+            "Bạn có thể nhớ lịch sử các tin nhắn trong cuộc hội thoại để trả lời theo ngữ cảnh.";
+
+        var messages = new List<object>
+        {
+            new { role = "system", content = systemPrompt }
+        };
+
+        // Thêm lịch sử hội thoại trước đó (tối đa 10 tin nhắn gần nhất)
+        if (conversationHistory != null)
+        {
+            foreach (var msg in conversationHistory.OrderBy(m => m.Timestamp).TakeLast(10))
+            {
+                var historyRole = msg.Role == "user" ? "user" : "assistant";
+                messages.Add(new { role = historyRole, content = msg.MessageText });
+            }
+        }
+
+        // Câu hỏi hiện tại kèm ngữ cảnh tài liệu (RAG context)
+        messages.Add(new
+        {
+            role = "user",
+            content = $"Ngữ cảnh tài liệu:\n{context}\n\nCâu hỏi hiện tại: {question}"
+        });
+
         var requestBody = new
         {
-            model = model,
-            messages = new[]
-            {
-                new { role = "system", content = "Bạn là trợ lý học tập. Chỉ trả lời dựa trên tài liệu được cung cấp. BẮT BUỘC 100% dùng tiếng Việt. Nghiêm cấm dùng chữ Hán (Chinese characters) như 模, 隐藏, 暴. Đối với thuật ngữ chuyên ngành (như Modularity, Encapsulation...), hãy giữ nguyên tiếng Anh hoặc dịch sang tiếng Việt thuần thục (ví dụ: tính mô-đun hóa, tính đóng gói)." },
-                new { role = "user", content = $"Ngữ cảnh:\n{context}\n\nCâu hỏi: {question}" }
-            },
+            model,
+            messages = messages.ToArray(),
             temperature = 0.3,
             max_tokens = 1024
         };
 
         var client = _httpClientFactory.CreateClient();
-        client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", apiKey);
-        
+        client.DefaultRequestHeaders.Authorization =
+            new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", apiKey);
+
         var url = "https://api.groq.com/openai/v1/chat/completions";
         var response = await client.PostAsJsonAsync(url, requestBody);
 

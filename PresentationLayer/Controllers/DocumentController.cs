@@ -6,6 +6,7 @@ using ServiceLayer.DTOs;
 
 namespace PresentationLayer.Controllers;
 
+[Authorize(Roles = "Teacher,Student")]  // base: cả 2 role đều vào được
 public class DocumentController : Controller
 {
     private readonly IDocumentService _documentService;
@@ -23,7 +24,7 @@ public class DocumentController : Controller
     }
 
     // GET: /Document  (danh sách tài liệu, lọc theo môn & trạng thái)
-    [Authorize(Roles = "Teacher,Student")]
+    // Kế thừa [Authorize(Roles = "Teacher,Student")] từ class
     public async Task<IActionResult> Index(int? subjectId, string filter = "all")
     {
         var subjects = await _subjectService.GetAllAsync();
@@ -48,7 +49,7 @@ public class DocumentController : Controller
         return View(vm);
     }
 
-    // GET: /Document/Upload
+    // GET: /Document/Upload  — chỉ Teacher
     [Authorize(Roles = "Teacher")]
     public async Task<IActionResult> Upload()
     {
@@ -59,7 +60,7 @@ public class DocumentController : Controller
         return View(vm);
     }
 
-    // POST: /Document/Upload
+    // POST: /Document/Upload  — chỉ Teacher
     [Authorize(Roles = "Teacher")]
     [HttpPost]
     [ValidateAntiForgeryToken]
@@ -103,7 +104,7 @@ public class DocumentController : Controller
         return RedirectToAction(nameof(Index));
     }
 
-    // POST: /Document/MarkIndexed/5  (extract text → chunk → lưu DB)
+    // POST: /Document/MarkIndexed/5  (extract text → chunk → lưu DB)  — chỉ Teacher
     [Authorize(Roles = "Teacher")]
     [HttpPost]
     [ValidateAntiForgeryToken]
@@ -121,7 +122,7 @@ public class DocumentController : Controller
         return RedirectToAction(nameof(Index));
     }
 
-    // POST: /Document/Delete/5
+    // POST: /Document/Delete/5  — chỉ Teacher
     [Authorize(Roles = "Teacher")]
     [HttpPost]
     [ValidateAntiForgeryToken]
@@ -133,7 +134,7 @@ public class DocumentController : Controller
     }
 
     // GET: /Document/Details/5
-    [Authorize(Roles = "Teacher,Student")]
+    // Kế thừa [Authorize(Roles = "Teacher,Student")] từ class
     public async Task<IActionResult> Details(int id)
     {
         var details = await _documentService.GetDetailsWithChunksAsync(id);
