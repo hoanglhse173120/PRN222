@@ -6,7 +6,7 @@ using ServiceLayer.Interfaces;
 
 namespace PresentationLayer.Controllers;
 
-[Authorize(Roles = "Student,Teacher")]
+[Authorize]
 public class ChatController : Controller
 {
     private readonly IChatService _chatService;

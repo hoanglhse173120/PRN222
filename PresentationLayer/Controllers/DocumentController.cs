@@ -6,7 +6,7 @@ using ServiceLayer.DTOs;
 
 namespace PresentationLayer.Controllers;
 
-[Authorize(Roles = "Teacher,Student")]  // base: cả 2 role đều vào được
+[Authorize]  // base: mọi user đã đăng nhập đều vào được
 public class DocumentController : Controller
 {
     private readonly IDocumentService _documentService;
