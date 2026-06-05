@@ -8,13 +8,14 @@ public class ChatSessionRepository : Repository<ChatSession>, IChatSessionReposi
 {
     public ChatSessionRepository(ChatbotDbContext context) : base(context) { }
 
-    public async Task<ChatSession?> GetWithMessagesAsync(int sessionId)
+    public async Task<ChatSession?> GetWithMessagesAsync(int sessionId, string userId)
         => await _context.ChatSessions
             .Include(s => s.ChatMessages.OrderBy(m => m.Timestamp))
-            .FirstOrDefaultAsync(s => s.SessionId == sessionId);
+            .FirstOrDefaultAsync(s => s.SessionId == sessionId && s.UserId == userId);
 
-    public async Task<IEnumerable<ChatSession>> GetAllOrderedAsync()
+    public async Task<IEnumerable<ChatSession>> GetAllOrderedByUserAsync(string userId)
         => await _context.ChatSessions
+            .Where(s => s.UserId == userId)
             .OrderByDescending(s => s.CreatedAt)
             .ToListAsync();
 }

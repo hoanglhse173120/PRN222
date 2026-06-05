@@ -22,16 +22,17 @@ public class ChatService : IChatService
         _messageSourceRepo = messageSourceRepo;
     }
 
-    public async Task<IEnumerable<ChatSessionDto>> GetAllSessionsAsync()
+    public async Task<IEnumerable<ChatSessionDto>> GetAllSessionsByUserAsync(string userId)
     {
-        var sessions = await _sessionRepo.GetAllOrderedAsync();
+        var sessions = await _sessionRepo.GetAllOrderedByUserAsync(userId);
         return sessions.Select(MapSessionToDto);
     }
 
-    public async Task<ChatSessionDto> CreateSessionAsync(string? sessionName = null)
+    public async Task<ChatSessionDto> CreateSessionAsync(string userId, string? sessionName = null)
     {
         var session = new ChatSession
         {
+            UserId = userId,
             SessionName = sessionName ?? "Phiên trò chuyện mới",
             CreatedAt = DateTime.Now
         };
@@ -40,9 +41,9 @@ public class ChatService : IChatService
         return MapSessionToDto(session);
     }
 
-    public async Task<ChatSessionDto?> GetSessionWithMessagesAsync(int sessionId)
+    public async Task<ChatSessionDto?> GetSessionWithMessagesAsync(int sessionId, string userId)
     {
-        var session = await _sessionRepo.GetWithMessagesAsync(sessionId);
+        var session = await _sessionRepo.GetWithMessagesAsync(sessionId, userId);
         if (session == null) return null;
         return MapSessionToDto(session);
     }
@@ -84,20 +85,20 @@ public class ChatService : IChatService
         };
     }
 
-    public async Task DeleteSessionAsync(int sessionId)
+    public async Task DeleteSessionAsync(int sessionId, string userId)
     {
         var session = await _sessionRepo.GetByIdAsync(sessionId);
-        if (session != null)
+        if (session != null && session.UserId == userId)
         {
             _sessionRepo.Delete(session);
             await _sessionRepo.SaveChangesAsync();
         }
     }
 
-    public async Task RenameSessionAsync(int sessionId, string newName)
+    public async Task RenameSessionAsync(int sessionId, string userId, string newName)
     {
         var session = await _sessionRepo.GetByIdAsync(sessionId);
-        if (session != null)
+        if (session != null && session.UserId == userId)
         {
             session.SessionName = newName;
             await _sessionRepo.SaveChangesAsync();

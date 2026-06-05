@@ -52,6 +52,13 @@ public class ChatbotDbContext : IdentityDbContext<IdentityUser>
             .HasForeignKey(m => m.SessionId)
             .OnDelete(DeleteBehavior.Cascade);
 
+        // ChatSession → User (N:1, cascade delete or set null)
+        modelBuilder.Entity<ChatSession>()
+            .HasOne(s => s.User)
+            .WithMany()
+            .HasForeignKey(s => s.UserId)
+            .OnDelete(DeleteBehavior.Cascade);
+
         // ChatMessage → MessageSources (1:N, cascade delete)
         modelBuilder.Entity<MessageSource>()
             .HasOne(ms => ms.Message)
