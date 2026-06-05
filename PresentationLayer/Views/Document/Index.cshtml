@@ -100,7 +100,7 @@
             <div class="empty-icon"><i class="bi bi-folder-x"></i></div>
             <h5>Không tìm thấy tài liệu nào</h5>
             <p class="text-muted">Thử thay đổi bộ lọc hoặc upload tài liệu mới.</p>
-            @if (User.IsInRole("Teacher"))
+            @if (User.IsInRole("Teacher") || User.IsInRole("Admin"))
             {
                 <a asp-action="Upload" class="btn btn-primary">
                     <i class="bi bi-cloud-arrow-up me-2"></i>Upload ngay
@@ -121,7 +121,7 @@
                         <th style="width:100px">Kích thước</th>
                         <th style="width:120px">Trạng thái</th>
                         <th style="width:130px">Ngày upload</th>
-                        @if (User.IsInRole("Teacher"))
+                        @if (User.IsInRole("Teacher") || User.IsInRole("Admin"))
                         {
                             <th style="width:160px">Hành động</th>
                         }
@@ -164,7 +164,7 @@
                                     <a asp-action="Details" asp-route-id="@doc.DocumentID" class="action-btn info" title="Chi tiết">
                                         <i class="bi bi-eye"></i>
                                     </a>
-                                    @if (User.IsInRole("Teacher"))
+                                    @if (User.IsInRole("Teacher") || User.IsInRole("Admin"))
                                     {
                                         @if (doc.IsIndexed != true)
                                         {

@@ -6,6 +6,8 @@ using System.Text.Json;
 using System.Net.Http.Json;
 using System.Net.Http;
 using System.Linq;
+using DataAccessLayer.Context;
+using Microsoft.EntityFrameworkCore;
 
 namespace ServiceLayer.Services;
 
@@ -16,19 +18,22 @@ public class DocumentService : IDocumentService
     private readonly ITextExtractorService _extractor;
     private readonly IChunkingService _chunker;
     private readonly IHttpClientFactory _httpClientFactory;
+    private readonly ChatbotDbContext _db;
 
     public DocumentService(
         IDocumentRepository repo,
         IRepository<DocumentChunk> chunkRepo,
         ITextExtractorService extractor,
         IChunkingService chunker,
-        IHttpClientFactory httpClientFactory)
+        IHttpClientFactory httpClientFactory,
+        ChatbotDbContext db)
     {
         _repo = repo;
         _chunkRepo = chunkRepo;
         _extractor = extractor;
         _chunker = chunker;
         _httpClientFactory = httpClientFactory;
+        _db = db;
     }
 
     public async Task<IEnumerable<DocumentDto>> GetAllAsync()
@@ -128,8 +133,24 @@ public class DocumentService : IDocumentService
         var doc = await _repo.GetByIdAsync(id);
         if (doc != null)
         {
+            // TÌM VÀ XÓA THỦ CÔNG CÁC MessageSource LIÊN QUAN ĐẾN CHUNKS CỦA TÀI LIỆU NÀY
+            // Để tránh lỗi "The DELETE statement conflicted with the REFERENCE constraint..." 
+            // do MessageSource -> DocumentChunk là OnDelete(NoAction).
+            var chunkIds = await _db.DocumentChunks
+                .Where(c => c.DocumentId == id)
+                .Select(c => c.ChunkId)
+                .ToListAsync();
+
+            if (chunkIds.Any())
+            {
+                // Thực thi trực tiếp xuống DB để chắc chắn xoá xong MessageSource trước khi EF xoá Document
+                await _db.MessageSources
+                    .Where(ms => chunkIds.Contains(ms.ChunkId))
+                    .ExecuteDeleteAsync();
+            }
+
             _repo.Delete(doc);
-            await _repo.SaveChangesAsync();
+            await _repo.SaveChangesAsync(); 
         }
     }
 
