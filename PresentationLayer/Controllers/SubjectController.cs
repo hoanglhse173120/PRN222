@@ -5,7 +5,7 @@ using ServiceLayer.DTOs;
 
 namespace PresentationLayer.Controllers;
 
-[Authorize(Roles = "Teacher")]
+[Authorize(Roles = "Admin")]
 public class SubjectController : Controller
 {
     private readonly ISubjectService _subjectService;

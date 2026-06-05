@@ -7,7 +7,7 @@ using Microsoft.AspNetCore.Identity;
 
 namespace PresentationLayer.Controllers;
 
-[Authorize]
+[Authorize(Roles = "Admin,Student")]
 public class ChatController : Controller
 {
     private readonly IChatService _chatService;

@@ -31,7 +31,7 @@
                         <li class="nav-item">
                             <a class="nav-link text-dark fw-medium" asp-controller="Home" asp-action="Index">Trang chủ</a>
                         </li>
-                        @if (User.Identity?.IsAuthenticated == true)
+                        @if (User.IsInRole("Admin") || User.IsInRole("Student"))
                         {
                             <li class="nav-item">
                                 <a class="nav-link fw-bold" style="color: var(--primary);" asp-controller="Chat" asp-action="Index">Chat AI</a>
@@ -45,13 +45,24 @@
                                 </a>
                                 <ul class="dropdown-menu glass-card border-0 mt-2 px-2 py-2 shadow" style="border-radius: 16px;">
                                     <li><a class="dropdown-item rounded" asp-controller="Document" asp-action="Index"><i class="bi bi-file-earmark-text me-2"></i>Danh sách</a></li>
-                                    @if (User.IsInRole("Teacher"))
+                                    @if (User.IsInRole("Teacher") || User.IsInRole("Admin"))
                                     {
                                         <li><a class="dropdown-item rounded" asp-controller="Document" asp-action="Upload"><i class="bi bi-cloud-arrow-up me-2"></i>Upload</a></li>
+                                    }
+                                    @if (User.IsInRole("Admin"))
+                                    {
                                         <li><hr class="dropdown-divider"></li>
-                                        <li><a class="dropdown-item rounded" asp-controller="Subject" asp-action="Index"><i class="bi bi-journal-bookmark me-2"></i>Môn học</a></li>
+                                        <li><a class="dropdown-item rounded" asp-controller="Subject" asp-action="Index"><i class="bi bi-journal-bookmark me-2"></i>Quản lý Môn học</a></li>
                                     }
                                 </ul>
+                            </li>
+                        }
+                        @if (User.IsInRole("Admin"))
+                        {
+                            <li class="nav-item">
+                                <a class="nav-link fw-semibold" style="color: #e11d48;" asp-controller="Admin" asp-action="Index">
+                                    <i class="bi bi-shield-lock me-1"></i>Quản trị
+                                </a>
                             </li>
                         }
                     </ul>

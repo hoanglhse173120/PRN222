@@ -9,19 +9,31 @@ namespace PresentationLayer.Data
             var roleManager = serviceProvider.GetRequiredService<RoleManager<IdentityRole>>();
             var userManager = serviceProvider.GetRequiredService<UserManager<IdentityUser>>();
 
-            string[] roleNames = { "Teacher", "Student" };
-            
-            // 1. Tạo Role
+            // 1. Tạo tất cả Role
+            string[] roleNames = { "Admin", "Teacher", "Student" };
             foreach (var roleName in roleNames)
             {
-                var roleExist = await roleManager.RoleExistsAsync(roleName);
-                if (!roleExist)
-                {
+                if (!await roleManager.RoleExistsAsync(roleName))
                     await roleManager.CreateAsync(new IdentityRole(roleName));
-                }
             }
 
-            // 2. Tạo User Giáo viên
+            // 2. Seed tài khoản Admin
+            var adminEmail = "admin@chatbot.com";
+            var adminUser = await userManager.FindByEmailAsync(adminEmail);
+            if (adminUser == null)
+            {
+                adminUser = new IdentityUser
+                {
+                    UserName = adminEmail,
+                    Email = adminEmail,
+                    EmailConfirmed = true
+                };
+                var result = await userManager.CreateAsync(adminUser, "Admin@123456");
+                if (result.Succeeded)
+                    await userManager.AddToRoleAsync(adminUser, "Admin");
+            }
+
+            // 3. Seed tài khoản Giáo viên mẫu
             var teacherEmail = "teacher@test.com";
             var teacherUser = await userManager.FindByEmailAsync(teacherEmail);
             if (teacherUser == null)
@@ -32,14 +44,12 @@ namespace PresentationLayer.Data
                     Email = teacherEmail,
                     EmailConfirmed = true
                 };
-                var createPowerUser = await userManager.CreateAsync(teacherUser, "Teacher@123");
-                if (createPowerUser.Succeeded)
-                {
+                var result = await userManager.CreateAsync(teacherUser, "Teacher@123");
+                if (result.Succeeded)
                     await userManager.AddToRoleAsync(teacherUser, "Teacher");
-                }
             }
 
-            // 3. Tạo User Sinh viên
+            // 4. Seed tài khoản Sinh viên mẫu
             var studentEmail = "student@test.com";
             var studentUser = await userManager.FindByEmailAsync(studentEmail);
             if (studentUser == null)
@@ -50,11 +60,9 @@ namespace PresentationLayer.Data
                     Email = studentEmail,
                     EmailConfirmed = true
                 };
-                var createStudentUser = await userManager.CreateAsync(studentUser, "Student@123");
-                if (createStudentUser.Succeeded)
-                {
+                var result = await userManager.CreateAsync(studentUser, "Student@123");
+                if (result.Succeeded)
                     await userManager.AddToRoleAsync(studentUser, "Student");
-                }
             }
         }
     }

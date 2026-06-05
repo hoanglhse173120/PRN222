@@ -1,0 +1,121 @@
+@model PresentationLayer.ViewModels.Admin.AssignSubjectsViewModel
+@{
+    ViewData["Title"] = "Phân công Môn học";
+    var maxReached = Model.AssignedSubjectIds.Count >= 2;
+}
+
+<div class="container py-5" style="max-width:600px">
+    <div class="card border-0 shadow-sm">
+        <div class="card-header bg-primary text-white py-3">
+            <h5 class="mb-0 fw-bold">
+                <i class="bi bi-book me-2"></i>Phân công Môn học — <span class="fw-normal">@Model.UserEmail</span>
+            </h5>
+        </div>
+        <div class="card-body p-4">
+            @if (TempData["Error"] != null)
+            {
+                <div class="alert alert-danger small"><i class="bi bi-exclamation-triangle me-1"></i>@TempData["Error"]</div>
+            }
+            @if (TempData["Success"] != null)
+            {
+                <div class="alert alert-success small"><i class="bi bi-check-circle me-1"></i>@TempData["Success"]</div>
+            }
+
+            <p class="text-muted small mb-1">
+                <i class="bi bi-info-circle me-1"></i>
+                Mỗi giảng viên được phân công <strong>tối đa 2 môn học</strong>.
+                Hiện đang: <strong>@Model.AssignedSubjectIds.Count / 2</strong>.
+            </p>
+            <p class="text-muted small mb-3">
+                <span class="badge bg-danger-subtle text-danger border border-danger-subtle me-1">🔒</span>
+                Môn bị khoá đã được phân cho giảng viên khác.
+            </p>
+
+            <form asp-action="AssignSubjects" method="post">
+                @Html.AntiForgeryToken()
+                <input type="hidden" name="userId" value="@Model.UserId" />
+
+                <div class="mb-4">
+                    @if (!Model.AllSubjects.Any())
+                    {
+                        <div class="text-center text-muted py-4">
+                            <i class="bi bi-journal-x fs-2 opacity-25 d-block mb-2"></i>
+                            Chưa có môn học nào trong hệ thống
+                        </div>
+                    }
+                    else
+                    {
+                        @foreach (var subject in Model.AllSubjects)
+                        {
+                            var isChecked    = Model.AssignedSubjectIds.Contains(subject.SubjectId);
+                            var isTaken      = Model.TakenByOtherIds.Contains(subject.SubjectId);
+                            var isDisabledMax = maxReached && !isChecked;
+                            var isDisabled   = isTaken || isDisabledMax;
+
+                            <div class="form-check border rounded p-3 mb-2 d-flex align-items-center gap-2
+                                @(isChecked ? "border-primary bg-primary-subtle" : "")
+                                @(isTaken ? "border-danger bg-danger-subtle opacity-75" : "")">
+
+                                <input class="form-check-input subject-checkbox" type="checkbox"
+                                       name="selectedSubjectIds" value="@subject.SubjectId"
+                                       id="subj_@subject.SubjectId"
+                                       @(isChecked ? "checked" : "")
+                                       @(isDisabled ? "disabled" : "") />
+
+                                <label class="form-check-label fw-semibold flex-grow-1" for="subj_@subject.SubjectId">
+                                    @if (isTaken)
+                                    {
+                                        <i class="bi bi-lock-fill me-2 text-danger"></i>
+                                    }
+                                    else
+                                    {
+                                        <i class="bi bi-journal-text me-2 text-primary"></i>
+                                    }
+                                    @subject.SubjectName
+                                </label>
+
+                                @if (isTaken)
+                                {
+                                    <span class="badge bg-danger-subtle text-danger border border-danger-subtle ms-auto">Đã có GV</span>
+                                }
+                            </div>
+                        }
+                    }
+                </div>
+
+                <div id="limitWarning" class="alert alert-warning small @(maxReached ? "" : "d-none")">
+                    <i class="bi bi-exclamation-triangle me-1"></i>
+                    Đã đạt giới hạn 2 môn học. Bỏ chọn một môn trước khi chọn môn khác.
+                </div>
+
+                <div class="d-flex gap-2">
+                    <button type="submit" class="btn btn-primary flex-grow-1">
+                        <i class="bi bi-check-lg me-1"></i>Lưu phân công
+                    </button>
+                    <a asp-action="Index" class="btn btn-outline-secondary">Huỷ</a>
+                </div>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+<script>
+    const checkboxes = document.querySelectorAll('.subject-checkbox:not([disabled])');
+    const warning    = document.getElementById('limitWarning');
+    const MAX = 2;
+
+    function updateState() {
+        // Tính tổng checked (cả ô bị disable vì taken cũng không được check)
+        const allChecked = [...document.querySelectorAll('.subject-checkbox')].filter(c => c.checked).length;
+        const limitHit   = allChecked >= MAX;
+        warning.classList.toggle('d-none', !limitHit);
+        checkboxes.forEach(cb => {
+            if (!cb.checked) cb.disabled = limitHit;
+        });
+    }
+
+    checkboxes.forEach(cb => cb.addEventListener('change', updateState));
+    updateState();
+</script>
+}

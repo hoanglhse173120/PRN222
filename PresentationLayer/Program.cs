@@ -32,7 +32,11 @@ builder.Services.AddAuthentication()
         options.ClientSecret = builder.Configuration["Authentication:Google:ClientSecret"] ?? "PLACEHOLDER";
     });
 
-builder.Services.AddRazorPages();
+builder.Services.AddRazorPages(options =>
+{
+    // Chặn trang đăng ký — chỉ Admin mới vào được (mọi người khác bị redirect)
+    options.Conventions.AuthorizePage("/Account/Register", "Admin");
+});
 
 // ── Repositories (DAL) ───────────────────────────────
 builder.Services.AddScoped(typeof(IRepository<>), typeof(Repository<>));

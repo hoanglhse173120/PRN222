@@ -18,6 +18,7 @@ public class ChatbotDbContext : IdentityDbContext<IdentityUser>
     public DbSet<ExperimentConfig> ExperimentConfigs { get; set; }
     public DbSet<TestQuestion> TestQuestions { get; set; }
     public DbSet<BenchmarkResult> BenchmarkResults { get; set; }
+    public DbSet<TeacherSubject> TeacherSubjects { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -31,6 +32,18 @@ public class ChatbotDbContext : IdentityDbContext<IdentityUser>
         modelBuilder.Entity<ExperimentConfig>().HasKey(e => e.ConfigId);
         modelBuilder.Entity<TestQuestion>().HasKey(q => q.QuestionId);
         modelBuilder.Entity<BenchmarkResult>().HasKey(b => b.ResultId);
+
+        // TeacherSubject — liên kết giảng viên với môn học (tối đa 2 môn/giảng viên)
+        modelBuilder.Entity<TeacherSubject>().HasKey(ts => ts.Id);
+        modelBuilder.Entity<TeacherSubject>()
+            .HasIndex(ts => new { ts.TeacherId, ts.SubjectId })
+            .IsUnique(); // Tránh phân công trùng
+        modelBuilder.Entity<TeacherSubject>()
+            .HasOne(ts => ts.Subject)
+            .WithMany()
+            .HasForeignKey(ts => ts.SubjectId)
+            .OnDelete(DeleteBehavior.Cascade);
+
         // Subject → Documents (1:N, cascade delete)
         modelBuilder.Entity<Document>()
             .HasOne(d => d.Subject)

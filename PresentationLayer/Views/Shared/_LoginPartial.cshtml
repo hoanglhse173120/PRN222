@@ -5,7 +5,7 @@
 <ul class="navbar-nav align-items-center gap-2">
 @if (SignInManager.IsSignedIn(User))
 {
-    var userPrefix = User.IsInRole("Teacher") ? "👨‍🏫" : "👤";
+    var userPrefix = User.IsInRole("Admin") ? "🛡️" : User.IsInRole("Teacher") ? "👨‍🏫" : "👤";
     <li class="nav-item">
         <a class="nav-link text-dark fw-medium px-3" style="background-color: var(--background-light); border-radius: 20px;" asp-area="Identity" asp-page="/Account/Manage/Index" title="Manage">
             @userPrefix @User.Identity?.Name
@@ -19,9 +19,6 @@
 }
 else
 {
-    <li class="nav-item">
-        <a class="btn btn-outline-primary rounded-pill px-4 fw-medium" asp-area="Identity" asp-page="/Account/Register">Đăng ký</a>
-    </li>
     <li class="nav-item">
         <a class="btn btn-primary rounded-pill px-4 text-white fw-medium shadow-sm" asp-area="Identity" asp-page="/Account/Login">Đăng nhập</a>
     </li>
