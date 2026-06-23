@@ -11,5 +11,6 @@ public interface IRagService
     Task<RagResponseDto> AskAsync(
         string question,
         IEnumerable<ChatMessageDto>? conversationHistory = null,
-        int topK = 5);
+        int topK = 5,
+        Func<string, Task>? onChunkReceived = null);
 }

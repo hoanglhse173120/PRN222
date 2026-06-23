@@ -1,0 +1,122 @@
+@page "{id:int}"
+@model PresentationLayer.Pages.Subject.EditModel
+@{
+    ViewData["Title"] = "Sửa Môn học";
+}
+
+<div class="subject-form-page">
+    <div class="form-container">
+
+        <div class="form-header">
+            <a asp-page="Index" class="back-btn">
+                <i class="bi bi-arrow-left"></i>
+            </a>
+            <div class="form-header-icon edit-icon">
+                <i class="bi bi-pencil-fill"></i>
+            </div>
+            <div>
+                <h2 class="form-title mb-0">Sửa Môn học</h2>
+                <p class="form-subtitle mb-0">Cập nhật thông tin môn học</p>
+            </div>
+        </div>
+
+        <form method="post" class="subject-form">
+            @Html.AntiForgeryToken()
+            <input asp-for="Input.SubjectID" type="hidden" />
+
+            <div class="form-group-modern">
+                <label asp-for="Input.SubjectName" class="form-label-modern">
+                    <i class="bi bi-bookmark me-2"></i>Tên môn học <span class="required">*</span>
+                </label>
+                <input asp-for="Input.SubjectName" class="input-modern" />
+                <span asp-validation-for="Input.SubjectName" class="validation-msg"></span>
+            </div>
+
+            <div class="form-group-modern">
+                <label asp-for="Input.Description" class="form-label-modern">
+                    <i class="bi bi-card-text me-2"></i>Mô tả
+                </label>
+                <textarea asp-for="Input.Description" class="input-modern textarea-modern" rows="4"></textarea>
+            </div>
+
+            <div class="form-actions-row">
+                <button type="submit" class="btn-submit-form" style="background: linear-gradient(135deg, #D97706, #F59E0B); box-shadow: 0 4px 14px rgba(217,119,6,0.3);">
+                    <i class="bi bi-check-lg me-2"></i>Lưu thay đổi
+                </button>
+                <a asp-page="Index" class="btn-cancel-form">Hủy</a>
+            </div>
+        </form>
+    </div>
+</div>
+
+@section Scripts { @{ await Html.RenderPartialAsync("_ValidationScriptsPartial"); } }
+
+<style>
+.subject-form-page {
+    display: flex; justify-content: center; padding-bottom: 2rem;
+}
+.form-container {
+    width: 100%; max-width: 580px;
+    background: white; border-radius: 20px;
+    padding: 2rem; box-shadow: 0 4px 24px rgba(0,0,0,0.08);
+    border: 1px solid rgba(0,0,0,0.05);
+}
+.form-header {
+    display: flex; align-items: center; gap: 1rem;
+    margin-bottom: 2rem; padding-bottom: 1.5rem;
+    border-bottom: 1px solid #F1F5F9;
+}
+.back-btn {
+    width: 36px; height: 36px; border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    border: 2px solid #E5E7EB; color: var(--text-muted);
+    text-decoration: none; transition: all 0.2s; flex-shrink: 0;
+}
+.back-btn:hover { border-color: var(--primary); color: var(--primary); }
+.form-header-icon {
+    width: 48px; height: 48px; border-radius: 14px;
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.3rem; color: white; flex-shrink: 0;
+}
+.edit-icon { background: linear-gradient(135deg, #D97706, #F59E0B); box-shadow: 0 6px 16px rgba(217,119,6,0.3); }
+.form-title { font-size: 1.3rem; color: var(--text-dark); }
+.form-subtitle { font-size: 0.82rem; color: var(--text-muted); }
+
+.subject-form { display: flex; flex-direction: column; gap: 1.25rem; }
+.form-group-modern { display: flex; flex-direction: column; }
+.form-label-modern {
+    font-size: 0.875rem; font-weight: 600;
+    color: var(--text-dark); margin-bottom: 0.6rem;
+}
+.required { color: #EF4444; }
+.input-modern {
+    padding: 0.85rem 1rem;
+    border: 2px solid #E5E7EB; border-radius: 12px;
+    font-size: 0.9rem; color: var(--text-dark);
+    background: #FAFAFA; transition: all 0.2s; outline: none;
+    font-family: inherit; width: 100%;
+}
+.input-modern:focus {
+    border-color: #D97706;
+    box-shadow: 0 0 0 4px rgba(217,119,6,0.1);
+    background: white;
+}
+.textarea-modern { resize: vertical; min-height: 100px; }
+.validation-msg { font-size: 0.8rem; color: #EF4444; margin-top: 0.35rem; }
+
+.form-actions-row { display: flex; gap: 0.75rem; padding-top: 0.5rem; }
+.btn-submit-form {
+    flex: 1; padding: 0.85rem;
+    color: white; border: none; border-radius: 12px;
+    font-weight: 600; font-size: 0.95rem; cursor: pointer;
+    transition: all 0.3s;
+}
+.btn-submit-form:hover { transform: translateY(-2px); filter: brightness(1.05); }
+.btn-cancel-form {
+    padding: 0.85rem 1.25rem; border-radius: 12px;
+    border: 2px solid #E5E7EB; color: var(--text-muted);
+    text-decoration: none; font-weight: 600; font-size: 0.9rem;
+    transition: all 0.2s;
+}
+.btn-cancel-form:hover { border-color: #9CA3AF; color: var(--text-dark); }
+</style>

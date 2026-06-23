@@ -9,12 +9,13 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.AspNetCore.Mvc.Authorization;
 using PresentationLayer.Data;
+using PresentationLayer.Hubs;
 
 var builder = WebApplication.CreateBuilder(args);
 
-// ── MVC ──────────────────────────────────────────────
-builder.Services.AddControllersWithViews();
+// ── Razor Pages ─────────────────────────────────────────
 builder.Services.AddHttpClient();
+builder.Services.AddSignalR();
 
 // ── DbContext ─────────────────────────────────────────
 builder.Services.AddDbContext<ChatbotDbContext>(options =>
@@ -70,7 +71,7 @@ using (var scope = app.Services.CreateScope())
 // ── Pipeline ─────────────────────────────────────────
 if (!app.Environment.IsDevelopment())
 {
-    app.UseExceptionHandler("/Home/Error");
+    app.UseExceptionHandler("/Error");
     app.UseHsts();
 }
 
@@ -80,10 +81,7 @@ app.UseRouting();
 app.UseAuthentication();
 app.UseAuthorization();
 
-app.MapControllerRoute(
-    name: "default",
-    pattern: "{controller=Home}/{action=Index}/{id?}")
-    .RequireAuthorization();
-app.MapRazorPages();
+app.MapRazorPages().RequireAuthorization();
+app.MapHub<ChatHub>("/chatHub");
 
 app.Run();

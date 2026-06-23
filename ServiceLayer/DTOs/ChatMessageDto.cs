@@ -7,4 +7,5 @@ public class ChatMessageDto
     public string? Role { get; set; }
     public string MessageText { get; set; } = null!;
     public DateTime Timestamp { get; set; }
+    public List<RagChunkResultDto>? Sources { get; set; }
 }

@@ -81,7 +81,15 @@ public class ChatService : IChatService
             SessionID = message.SessionId,
             Role = message.Role,
             MessageText = message.MessageText,
-            Timestamp = message.Timestamp ?? DateTime.MinValue
+            Timestamp = message.Timestamp ?? DateTime.MinValue,
+            Sources = message.MessageSources?.Select(ms => new RagChunkResultDto
+            {
+                ChunkID = ms.ChunkId,
+                Score = ms.RelevanceScore ?? 0,
+                FileName = ms.Chunk?.Document?.FileName ?? "Tài liệu không xác định",
+                SubjectName = ms.Chunk?.Document?.Subject?.SubjectName,
+                ChunkContent = ms.Chunk?.ChunkContent ?? ""
+            }).ToList()
         };
     }
 

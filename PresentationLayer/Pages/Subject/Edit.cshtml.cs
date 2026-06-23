@@ -1,0 +1,33 @@
+using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.AspNetCore.Mvc.RazorPages;
+using ServiceLayer.DTOs;
+using ServiceLayer.Interfaces;
+
+namespace PresentationLayer.Pages.Subject;
+
+[Authorize(Roles = "Admin")]
+public class EditModel : PageModel
+{
+    private readonly ISubjectService _subjectService;
+    public EditModel(ISubjectService subjectService) => _subjectService = subjectService;
+
+    [BindProperty]
+    public SubjectDto Input { get; set; } = new();
+
+    public async Task<IActionResult> OnGetAsync(int id)
+    {
+        var subject = await _subjectService.GetByIdAsync(id);
+        if (subject == null) return NotFound();
+        Input = subject;
+        return Page();
+    }
+
+    public async Task<IActionResult> OnPostAsync()
+    {
+        if (!ModelState.IsValid) return Page();
+        await _subjectService.UpdateAsync(Input);
+        TempData["Success"] = "Cập nhật môn học thành công!";
+        return RedirectToPage("Index");
+    }
+}

@@ -27,7 +27,8 @@ public class RagService : IRagService
     public async Task<RagResponseDto> AskAsync(
         string question,
         IEnumerable<ChatMessageDto>? conversationHistory = null,
-        int topK = 5)
+        int topK = 5,
+        Func<string, Task>? onChunkReceived = null)
     {
         topK = int.TryParse(_config["Rag:TopK"], out var cfgK) ? cfgK : topK;
         var minScore = double.TryParse(_config["Rag:MinScore"], out var ms) ? ms : 0.35;
@@ -84,7 +85,7 @@ public class RagService : IRagService
             contextBuilder.AppendLine();
         }
 
-        var answer = await CallLlmAsync(question, contextBuilder.ToString(), conversationHistory);
+        var answer = await CallLlmAsync(question, contextBuilder.ToString(), conversationHistory, onChunkReceived);
 
         var sources = scoredChunks.Select(x => new RagChunkResultDto
         {
@@ -140,7 +141,8 @@ public class RagService : IRagService
     private async Task<string> CallLlmAsync(
         string question,
         string context,
-        IEnumerable<ChatMessageDto>? conversationHistory = null)
+        IEnumerable<ChatMessageDto>? conversationHistory = null,
+        Func<string, Task>? onChunkReceived = null)
     {
         var apiKey = _config["Groq:ApiKey"];
         var model = _config["Groq:Model"] ?? "llama3-70b-8192";
@@ -182,7 +184,8 @@ public class RagService : IRagService
             model,
             messages = messages.ToArray(),
             temperature = 0.3,
-            max_tokens = 1024
+            max_tokens = 1024,
+            stream = onChunkReceived != null
         };
 
         var client = _httpClientFactory.CreateClient();
@@ -190,7 +193,12 @@ public class RagService : IRagService
             new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", apiKey);
 
         var url = "https://api.groq.com/openai/v1/chat/completions";
-        var response = await client.PostAsJsonAsync(url, requestBody);
+        var request = new HttpRequestMessage(HttpMethod.Post, url)
+        {
+            Content = JsonContent.Create(requestBody)
+        };
+
+        using var response = await client.SendAsync(request, HttpCompletionOption.ResponseHeadersRead);
 
         if (!response.IsSuccessStatusCode)
         {
@@ -198,9 +206,43 @@ public class RagService : IRagService
             return $"[Groq API lỗi {response.StatusCode}]: {err[..Math.Min(200, err.Length)]}";
         }
 
-        var result = await response.Content.ReadFromJsonAsync<GroqResponse>();
-        return result?.Choices?.FirstOrDefault()?.Message?.Content
-               ?? "AI không trả về câu trả lời.";
+        if (onChunkReceived == null)
+        {
+            var result = await response.Content.ReadFromJsonAsync<GroqResponse>();
+            return result?.Choices?.FirstOrDefault()?.Message?.Content ?? "AI không trả về câu trả lời.";
+        }
+
+        // Streaming (SSE)
+        using var stream = await response.Content.ReadAsStreamAsync();
+        using var reader = new System.IO.StreamReader(stream);
+        var fullAnswerBuilder = new StringBuilder();
+
+        var jsonOptions = new JsonSerializerOptions { PropertyNameCaseInsensitive = true };
+
+        while (!reader.EndOfStream)
+        {
+            var line = await reader.ReadLineAsync();
+            if (string.IsNullOrWhiteSpace(line)) continue;
+            if (line.StartsWith("data: "))
+            {
+                var data = line.Substring(6);
+                if (data == "[DONE]") break;
+
+                try
+                {
+                    var chunkObj = JsonSerializer.Deserialize<GroqStreamResponse>(data, jsonOptions);
+                    var content = chunkObj?.Choices?.FirstOrDefault()?.Delta?.Content;
+                    if (!string.IsNullOrEmpty(content))
+                    {
+                        fullAnswerBuilder.Append(content);
+                        await onChunkReceived(content);
+                    }
+                }
+                catch { /* Bỏ qua lỗi parse của các dòng không hợp lệ */ }
+            }
+        }
+
+        return fullAnswerBuilder.ToString();
     }
 
     // ── Private response models ────────────────────────────────────────────
@@ -218,6 +260,19 @@ public class RagService : IRagService
         public GroqMessage? Message { get; set; }
     }
     private class GroqMessage
+    {
+        public string? Content { get; set; }
+    }
+
+    private class GroqStreamResponse
+    {
+        public List<GroqStreamChoice>? Choices { get; set; }
+    }
+    private class GroqStreamChoice
+    {
+        public GroqDelta? Delta { get; set; }
+    }
+    private class GroqDelta
     {
         public string? Content { get; set; }
     }

@@ -1,0 +1,90 @@
+<!DOCTYPE html>
+<html lang="vi">
+<head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>@ViewData["Title"] - Chatbot RAG</title>
+    <!-- Google Fonts -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <!-- Bootstrap Icons -->
+    <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
+
+    <link rel="stylesheet" href="~/lib/bootstrap/dist/css/bootstrap.min.css" />
+    <link rel="stylesheet" href="~/css/site.css" asp-append-version="true" />
+    <link rel="stylesheet" href="~/PresentationLayer.styles.css" asp-append-version="true" />
+</head>
+<body>
+    <header>
+        <nav class="navbar navbar-expand-sm navbar-toggleable-sm navbar-light glass-nav sticky-top mb-4 mt-3 mx-auto" style="max-width: 1200px; border-radius: 100px; padding-left: 1.5rem; padding-right: 1.5rem; z-index: 1000;">
+            <div class="container-fluid">
+                <a class="navbar-brand fw-bold mb-0 h1 d-flex align-items-center gap-2" asp-page="/Index">
+                    <span style="font-size: 1.5rem;">✨</span>
+                    <span style="background: linear-gradient(135deg, var(--primary), var(--secondary)); -webkit-background-clip: text; -webkit-text-fill-color: transparent;">Chatbot RAG</span>
+                </a>
+                <button class="navbar-toggler border-0 shadow-none" type="button" data-bs-toggle="collapse" data-bs-target=".navbar-collapse">
+                    <span class="navbar-toggler-icon"></span>
+                </button>
+                <div class="navbar-collapse collapse d-sm-inline-flex justify-content-between">
+                    <ul class="navbar-nav flex-grow-1 ms-3">
+                        <li class="nav-item">
+                            <a class="nav-link text-dark fw-medium" asp-page="/Index">Trang chủ</a>
+                        </li>
+                        @if (User.IsInRole("Admin") || User.IsInRole("Student"))
+                        {
+                            <li class="nav-item">
+                                <a class="nav-link fw-bold" style="color: var(--primary);" asp-page="/Chat/Index">Chat AI</a>
+                            </li>
+                        }
+                        @if (User.Identity?.IsAuthenticated == true)
+                        {
+                            <li class="nav-item dropdown">
+                                <a class="nav-link dropdown-toggle text-dark fw-medium" href="#" data-bs-toggle="dropdown">
+                                    Tài liệu
+                                </a>
+                                <ul class="dropdown-menu glass-card border-0 mt-2 px-2 py-2 shadow" style="border-radius: 16px;">
+                                    <li><a class="dropdown-item rounded" asp-page="/Document/Index"><i class="bi bi-file-earmark-text me-2"></i>Danh sách</a></li>
+                                    @if (User.IsInRole("Teacher") || User.IsInRole("Admin"))
+                                    {
+                                        <li><a class="dropdown-item rounded" asp-page="/Document/Upload"><i class="bi bi-cloud-arrow-up me-2"></i>Upload</a></li>
+                                    }
+                                    @if (User.IsInRole("Admin"))
+                                    {
+                                        <li><hr class="dropdown-divider"></li>
+                                        <li><a class="dropdown-item rounded" asp-page="/Subject/Index"><i class="bi bi-journal-bookmark me-2"></i>Quản lý Môn học</a></li>
+                                    }
+                                </ul>
+                            </li>
+                        }
+                        @if (User.IsInRole("Admin"))
+                        {
+                            <li class="nav-item">
+                                <a class="nav-link fw-semibold" style="color: #e11d48;" asp-page="/Admin/Index">
+                                    <i class="bi bi-shield-lock me-1"></i>Quản trị
+                                </a>
+                            </li>
+                        }
+                    </ul>
+                    <partial name="_LoginPartial" />
+                </div>
+            </div>
+        </nav>
+    </header>
+    <div class="container fade-in-up">
+        <main role="main" class="pb-3">
+            @RenderBody()
+        </main>
+    </div>
+
+    <footer class="border-top footer text-muted mt-5 py-4" style="background: var(--glass-bg); backdrop-filter: blur(10px);">
+        <div class="container text-center">
+            &copy; 2026 - <span class="fw-semibold">Chatbot RAG</span> - <a asp-page="/Privacy" class="text-decoration-none" style="color: var(--primary);">Privacy</a>
+        </div>
+    </footer>
+    <script src="~/lib/jquery/dist/jquery.min.js"></script>
+    <script src="~/lib/bootstrap/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="~/js/site.js" asp-append-version="true"></script>
+    @await RenderSectionAsync("Scripts", required: false)
+</body>
+</html>
