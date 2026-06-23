@@ -13,43 +13,7 @@ This repository contains an ASP.NET Core web application integrated with a Pytho
 
 ## 🏗️ Architecture
 
-```mermaid
-flowchart TD
-    USER[USER]
-    
-    subgraph PL [PRESENTATION LAYER]
-        P_DESC["ASP .NET MVC<br>CONTROLLER<br>VIEW<br>VIEW MODEL"]
-    end
-    
-    subgraph SL [SERVICE LAYER]
-        S_DESC["INTERFACES<br>SERVICES<br>DTOs"]
-    end
-    
-    subgraph DAL [DATA ACCESS LAYER]
-        D_DESC["Entities<br>Context<br>Repositories"]
-    end
-    
-    AIS[AI Service]
-    
-    subgraph DB [DATA BASE]
-        DB_DESC["SQL SERVER"]
-    end
-    
-    USER -- "HTTP REQUEST" --> PL
-    PL -. "HTTP RESPONSE" .-> USER
-    
-    PL -- "CALL SERVICE METHOD" --> SL
-    SL -. "BUSINESS RESULT" .-> PL
-    
-    SL -- "AI REQUEST" --> AIS
-    AIS -. "RETURN AI RESPONSE" .-> SL
-    
-    SL -- "REQUEST DATA" --> DAL
-    DAL -. "RETURN ENTITIES" .-> SL
-    
-    DAL -- "EXECUTE SQL" --> DB
-    DB -. "RAW DATA" .-> DAL
-```
+![Architecture](Architecture.jpg)
 
 ## 📁 Project Structure
 * **`PresentationLayer/`**: The ASP.NET Core Razor Pages frontend, Hubs (SignalR), and application configuration.
