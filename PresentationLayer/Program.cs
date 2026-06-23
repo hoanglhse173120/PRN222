@@ -10,7 +10,9 @@ using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.AspNetCore.Mvc.Authorization;
 using PresentationLayer.Data;
 using PresentationLayer.Hubs;
+using DotNetEnv;
 
+Env.Load();
 var builder = WebApplication.CreateBuilder(args);
 
 // ── Razor Pages ─────────────────────────────────────────

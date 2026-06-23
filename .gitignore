@@ -26,3 +26,7 @@ PresentationLayer/appsettings.json
 DataAccessLayer/Entities/ChatbotRbldbContext.cs
 PresentationLayer/appsettings.json
 PresentationLayer/appsettings.json
+PresentationLayer/appsettings.json
+
+# Environment variables
+.env
