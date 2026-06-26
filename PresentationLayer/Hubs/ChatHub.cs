@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.SignalR;
 using ServiceLayer.Interfaces;
+using System.Collections.Concurrent;
 
 namespace PresentationLayer.Hubs;
 
@@ -10,13 +11,12 @@ public class ChatHub : Hub
 {
     private readonly IChatService _chatService;
     private readonly IRagService _ragService;
-    private readonly UserManager<IdentityUser> _userManager;
+    private static readonly ConcurrentDictionary<string, CancellationTokenSource> _activeGenerations = new();
 
-    public ChatHub(IChatService chatService, IRagService ragService, UserManager<IdentityUser> userManager)
+    public ChatHub(IChatService chatService, IRagService ragService)
     {
         _chatService = chatService;
         _ragService = ragService;
-        _userManager = userManager;
     }
 
     /// <summary>
@@ -25,7 +25,7 @@ public class ChatHub : Hub
     /// </summary>
     public async Task SendMessage(int sessionId, string message)
     {
-        var userId = _userManager.GetUserId(Context.User) ?? "";
+        var userId = Context.UserIdentifier ?? "";
 
         if (string.IsNullOrWhiteSpace(message))
         {
@@ -50,14 +50,16 @@ public class ChatHub : Hub
         string? newSessionName = null;
         if (isFirstMessage)
         {
-            newSessionName = message.Length > 40
-                ? message[..40].TrimEnd() + "…"
-                : message;
+            newSessionName = await _ragService.GenerateTitleAsync(message);
             await _chatService.RenameSessionAsync(sessionId, userId, newSessionName);
         }
 
         // 4. Báo client đã nhận tin nhắn user (để hiển thị bubble)
         await Clients.Caller.SendAsync("ReceiveUserMessage", message, newSessionName);
+
+        var cts = new CancellationTokenSource();
+        _activeGenerations[Context.ConnectionId] = cts;
+        var partialAnswer = new System.Text.StringBuilder();
 
         try
         {
@@ -69,23 +71,37 @@ public class ChatHub : Hub
                 .ToList();
 
             // 6. Gọi RAG pipeline
-            var ragResult = await _ragService.AskAsync(message, history, 5, async (chunk) => 
+            var ragResult = await _ragService.AskAsync(message, history, session?.SubjectId, 5, async (chunk) => 
             {
-                // Push từng mảnh text về client qua SignalR
-                await Clients.Caller.SendAsync("StreamNext", chunk);
-            });
+                partialAnswer.Append(chunk);
+                // Mã hóa chuỗi chunk trước khi stream về để chống XSS
+                var encodedChunk = System.Net.WebUtility.HtmlEncode(chunk);
+                await Clients.Caller.SendAsync("StreamNext", encodedChunk);
+            }, cts.Token);
             var rawAnswer = ragResult.Answer;
 
             // 7. Lưu câu trả lời vào DB
             await _chatService.AddMessageWithSourcesAsync(sessionId, "assistant", rawAnswer, ragResult.Sources);
 
-            // 8. Render markdown đơn giản
+            // 8. Render markdown đơn giản (An toàn XSS: Encode trước khi parse Markdown)
+            var encodedAnswer = System.Net.WebUtility.HtmlEncode(rawAnswer);
             var rendered = System.Text.RegularExpressions.Regex
-                .Replace(rawAnswer, @"\*\*(.*?)\*\*", "<strong>$1</strong>")
+                .Replace(encodedAnswer, @"\*\*(.*?)\*\*", "<strong>$1</strong>")
                 .Replace("\n", "<br/>");
 
             // 9. Push kết quả về caller
             await Clients.Caller.SendAsync("StreamComplete", rendered, newSessionName, ragResult.Sources);
+        }
+        catch (OperationCanceledException)
+        {
+            var rawAnswer = partialAnswer.ToString();
+            var encodedAnswer = System.Net.WebUtility.HtmlEncode(rawAnswer);
+            var rendered = System.Text.RegularExpressions.Regex
+                .Replace(encodedAnswer, @"\*\*(.*?)\*\*", "<strong>$1</strong>")
+                .Replace("\n", "<br/>");
+            
+            await _chatService.AddMessageAsync(sessionId, "assistant", rawAnswer);
+            await Clients.Caller.SendAsync("StreamComplete", rendered, newSessionName, new List<ServiceLayer.DTOs.RagChunkResultDto>());
         }
         catch (Exception ex)
         {
@@ -95,6 +111,18 @@ public class ChatHub : Hub
 
             var rendered = errText.Replace("\n", "<br/>");
             await Clients.Caller.SendAsync("StreamComplete", rendered, newSessionName);
+        }
+        finally
+        {
+            _activeGenerations.TryRemove(Context.ConnectionId, out _);
+        }
+    }
+
+    public void StopGenerating()
+    {
+        if (_activeGenerations.TryGetValue(Context.ConnectionId, out var cts))
+        {
+            cts.Cancel();
         }
     }
 }

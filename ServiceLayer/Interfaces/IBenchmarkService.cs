@@ -1,13 +1,13 @@
-using DataAccessLayer.Entities;
+using ServiceLayer.DTOs;
 
 namespace ServiceLayer.Interfaces;
 
 public interface IBenchmarkService
 {
-    Task<IEnumerable<ExperimentConfig>> GetAllConfigsAsync();
-    Task<ExperimentConfig> CreateConfigAsync(ExperimentConfig config);
-    Task<IEnumerable<BenchmarkResult>> GetResultsByConfigAsync(int configId);
-    Task<IEnumerable<TestQuestion>> GetAllQuestionsAsync();
-    Task AddQuestionAsync(TestQuestion question);
-    Task SaveBenchmarkResultAsync(BenchmarkResult result);
+    Task<IEnumerable<ExperimentConfigDto>> GetAllConfigsAsync();
+    Task<ExperimentConfigDto> CreateConfigAsync(ExperimentConfigDto config);
+    Task<IEnumerable<BenchmarkResultDto>> GetResultsByConfigAsync(int configId);
+    Task<IEnumerable<TestQuestionDto>> GetAllQuestionsAsync();
+    Task AddQuestionAsync(TestQuestionDto question);
+    Task SaveBenchmarkResultAsync(BenchmarkResultDto result);
 }

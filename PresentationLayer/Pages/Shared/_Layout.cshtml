@@ -45,7 +45,7 @@
                                 </a>
                                 <ul class="dropdown-menu glass-card border-0 mt-2 px-2 py-2 shadow" style="border-radius: 16px;">
                                     <li><a class="dropdown-item rounded" asp-page="/Document/Index"><i class="bi bi-file-earmark-text me-2"></i>Danh sách</a></li>
-                                    @if (User.IsInRole("Teacher") || User.IsInRole("Admin"))
+                                    @if (User.IsInRole("Teacher"))
                                     {
                                         <li><a class="dropdown-item rounded" asp-page="/Document/Upload"><i class="bi bi-cloud-arrow-up me-2"></i>Upload</a></li>
                                     }

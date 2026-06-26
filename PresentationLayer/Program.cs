@@ -8,7 +8,7 @@ using ServiceLayer.Services;
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity.UI.Services;
 using Microsoft.AspNetCore.Mvc.Authorization;
-using PresentationLayer.Data;
+using PresentationLayer.Seeders;
 using PresentationLayer.Hubs;
 using DotNetEnv;
 
@@ -18,6 +18,7 @@ var builder = WebApplication.CreateBuilder(args);
 // ── Razor Pages ─────────────────────────────────────────
 builder.Services.AddHttpClient();
 builder.Services.AddSignalR();
+builder.Services.AddMemoryCache();
 
 // ── DbContext ─────────────────────────────────────────
 builder.Services.AddDbContext<ChatbotDbContext>(options =>
@@ -62,7 +63,7 @@ using (var scope = app.Services.CreateScope())
     var services = scope.ServiceProvider;
     try
     {
-        await DataSeeder.SeedRolesAndUsersAsync(services);
+        await IdentitySeeder.SeedRolesAndUsersAsync(services);
     }
     catch (Exception ex)
     {

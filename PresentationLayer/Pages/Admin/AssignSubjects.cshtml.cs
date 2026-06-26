@@ -1,10 +1,11 @@
-using DataAccessLayer.Context;
+
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
-using Microsoft.EntityFrameworkCore;
 using PresentationLayer.ViewModels.Admin;
+
+using ServiceLayer.Interfaces;
 
 namespace PresentationLayer.Pages.Admin;
 
@@ -13,16 +14,16 @@ public class AssignSubjectsModel : PageModel
 {
     private readonly UserManager<IdentityUser> _userManager;
     private readonly RoleManager<IdentityRole> _roleManager;
-    private readonly ChatbotDbContext _db;
+    private readonly ISubjectService _subjectService;
 
     public AssignSubjectsModel(
         UserManager<IdentityUser> userManager,
         RoleManager<IdentityRole> roleManager,
-        ChatbotDbContext db)
+        ISubjectService subjectService)
     {
         _userManager = userManager;
         _roleManager = roleManager;
-        _db = db;
+        _subjectService = subjectService;
     }
 
     public AssignSubjectsViewModel Vm { get; set; } = null!;
@@ -39,19 +40,11 @@ public class AssignSubjectsModel : PageModel
             return RedirectToPage("Index");
         }
 
-        var allSubjects = await _db.Subjects
-            .Select(s => new SubjectOption { SubjectId = s.SubjectId, SubjectName = s.SubjectName })
-            .ToListAsync();
+        var subjects = await _subjectService.GetAllAsync();
+        var allSubjects = subjects.Select(s => new SubjectOption { SubjectId = s.SubjectID, SubjectName = s.SubjectName }).ToList();
 
-        var assignedIds = await _db.TeacherSubjects
-            .Where(ts => ts.TeacherId == userId)
-            .Select(ts => ts.SubjectId)
-            .ToListAsync();
-
-        var takenByOthers = await _db.TeacherSubjects
-            .Where(ts => ts.TeacherId != userId)
-            .Select(ts => ts.SubjectId)
-            .ToListAsync();
+        var assignedIds = await _subjectService.GetAssignedSubjectIdsAsync(userId);
+        var takenByOthers = await _subjectService.GetTakenByOthersSubjectIdsAsync(userId);
 
         Vm = new AssignSubjectsViewModel
         {
@@ -67,40 +60,14 @@ public class AssignSubjectsModel : PageModel
 
     public async Task<IActionResult> OnPostAsync(string userId, List<int> selectedSubjectIds)
     {
-        selectedSubjectIds = selectedSubjectIds.Distinct().ToList();
+        var result = await _subjectService.AssignSubjectsToTeacherAsync(userId, selectedSubjectIds);
 
-        if (selectedSubjectIds.Count > 2)
+        if (!result.Success)
         {
-            TempData["Error"] = "Giảng viên chỉ được phân công tối đa 2 môn học.";
+            TempData["Error"] = result.ErrorMessage;
             return RedirectToPage(new { userId });
         }
 
-        var conflicts = await _db.TeacherSubjects
-            .Where(ts => ts.TeacherId != userId && selectedSubjectIds.Contains(ts.SubjectId))
-            .Include(ts => ts.Subject)
-            .ToListAsync();
-
-        if (conflicts.Any())
-        {
-            var names = string.Join(", ", conflicts.Select(c => $"\"{c.Subject.SubjectName}\""));
-            TempData["Error"] = $"Không thể phân công! Các môn {names} đã được phân cho giảng viên khác.";
-            return RedirectToPage(new { userId });
-        }
-
-        var existing = _db.TeacherSubjects.Where(ts => ts.TeacherId == userId);
-        _db.TeacherSubjects.RemoveRange(existing);
-
-        foreach (var subjectId in selectedSubjectIds)
-        {
-            _db.TeacherSubjects.Add(new DataAccessLayer.Entities.TeacherSubject
-            {
-                TeacherId = userId,
-                SubjectId = subjectId,
-                AssignedAt = DateTime.Now
-            });
-        }
-
-        await _db.SaveChangesAsync();
         TempData["Success"] = "Cập nhật phân công môn học thành công.";
         return RedirectToPage("Index");
     }

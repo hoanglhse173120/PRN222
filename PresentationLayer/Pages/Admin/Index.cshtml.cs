@@ -1,11 +1,11 @@
-using DataAccessLayer.Context;
-using DataAccessLayer.Entities;
+
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
-using Microsoft.EntityFrameworkCore;
 using PresentationLayer.ViewModels.Admin;
+
+using ServiceLayer.Interfaces;
 
 namespace PresentationLayer.Pages.Admin;
 
@@ -13,12 +13,12 @@ namespace PresentationLayer.Pages.Admin;
 public class IndexModel : PageModel
 {
     private readonly UserManager<IdentityUser> _userManager;
-    private readonly ChatbotDbContext _db;
+    private readonly ISubjectService _subjectService;
 
-    public IndexModel(UserManager<IdentityUser> userManager, ChatbotDbContext db)
+    public IndexModel(UserManager<IdentityUser> userManager, ISubjectService subjectService)
     {
         _userManager = userManager;
-        _db = db;
+        _subjectService = subjectService;
     }
 
     public List<UserListItemViewModel> Users { get; set; } = new();
@@ -32,11 +32,7 @@ public class IndexModel : PageModel
             var role = roles.FirstOrDefault() ?? "—";
             if (role == "Admin") continue;
 
-            var assignedSubjects = await _db.TeacherSubjects
-                .Where(ts => ts.TeacherId == user.Id)
-                .Include(ts => ts.Subject)
-                .Select(ts => ts.Subject.SubjectName)
-                .ToListAsync();
+            var assignedSubjects = await _subjectService.GetAssignedSubjectNamesAsync(user.Id);
 
             Users.Add(new UserListItemViewModel
             {
@@ -53,9 +49,7 @@ public class IndexModel : PageModel
         var user = await _userManager.FindByIdAsync(userId);
         if (user == null) return NotFound();
 
-        var assignments = _db.TeacherSubjects.Where(ts => ts.TeacherId == userId);
-        _db.TeacherSubjects.RemoveRange(assignments);
-        await _db.SaveChangesAsync();
+        await _subjectService.RemoveAllAssignmentsAsync(userId);
 
         await _userManager.DeleteAsync(user);
         TempData["Success"] = "Đã xoá tài khoản thành công.";

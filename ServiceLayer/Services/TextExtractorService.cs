@@ -65,11 +65,15 @@ public class TextExtractorService : ITextExtractorService
         foreach (var slidePart in slideParts)
         {
             sb.AppendLine($"--- Slide {slideNum++} ---");
-            foreach (var textElem in slidePart.Slide.Descendants<DocumentFormat.OpenXml.Drawing.Text>())
+            var descendants = slidePart.Slide?.Descendants<DocumentFormat.OpenXml.Drawing.Text>();
+            if (descendants != null)
             {
-                var text = textElem.Text?.Trim();
-                if (!string.IsNullOrWhiteSpace(text))
-                    sb.AppendLine(text);
+                foreach (var textElem in descendants)
+                {
+                    var text = textElem.Text?.Trim();
+                    if (!string.IsNullOrWhiteSpace(text))
+                        sb.AppendLine(text);
+                }
             }
         }
         return sb.ToString();

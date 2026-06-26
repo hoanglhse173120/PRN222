@@ -36,14 +36,7 @@ public class SessionModel : PageModel
         return Page();
     }
 
-    // POST: create new session
-    public async Task<IActionResult> OnPostCreateAsync(string? sessionName)
-    {
-        var userId = _userManager.GetUserId(User) ?? "";
-        var session = await _chatService.CreateSessionAsync(
-            userId, string.IsNullOrWhiteSpace(sessionName) ? "Phiên chat mới" : sessionName);
-        return RedirectToPage(new { id = session.SessionID });
-    }
+
 
     // POST: delete session
     public async Task<IActionResult> OnPostDeleteAsync(int id)
@@ -51,6 +44,26 @@ public class SessionModel : PageModel
         var userId = _userManager.GetUserId(User) ?? "";
         await _chatService.DeleteSessionAsync(id, userId);
         TempData["Success"] = "Đã xóa phiên trò chuyện.";
+        
+        var allSessions = await _chatService.GetAllSessionsByUserAsync(userId);
+        var recentSession = allSessions.OrderByDescending(s => s.CreatedAt).FirstOrDefault();
+        
+        if (recentSession != null)
+        {
+            return RedirectToPage("/Chat/Session", new { id = recentSession.SessionID });
+        }
+
         return RedirectToPage("/Chat/Index");
+    }
+
+    // POST: rename session
+    public async Task<IActionResult> OnPostRenameAsync(int id, string newName)
+    {
+        var userId = _userManager.GetUserId(User) ?? "";
+        if (!string.IsNullOrWhiteSpace(newName))
+        {
+            await _chatService.RenameSessionAsync(id, userId, newName.Trim());
+        }
+        return RedirectToPage("/Chat/Session", new { id = id });
     }
 }

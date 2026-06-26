@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 
 namespace DataAccessLayer.Entities;
@@ -20,6 +20,10 @@ public partial class Document
     public bool? IsIndexed { get; set; }
 
     public DateTime? UploadedAt { get; set; }
+
+    public string? UploadedByUserId { get; set; }
+
+    public virtual Microsoft.AspNetCore.Identity.IdentityUser? UploadedByUser { get; set; }
 
     public virtual ICollection<DocumentChunk> DocumentChunks { get; set; } = new List<DocumentChunk>();
 

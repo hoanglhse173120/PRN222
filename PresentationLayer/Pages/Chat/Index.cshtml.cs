@@ -2,6 +2,7 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
+using ServiceLayer.DTOs;
 using ServiceLayer.Interfaces;
 
 namespace PresentationLayer.Pages.Chat;
@@ -10,24 +11,36 @@ namespace PresentationLayer.Pages.Chat;
 public class IndexModel : PageModel
 {
     private readonly IChatService _chatService;
+    private readonly ISubjectService _subjectService;
     private readonly UserManager<IdentityUser> _userManager;
 
-    public IndexModel(IChatService chatService, UserManager<IdentityUser> userManager)
+    public IndexModel(IChatService chatService, ISubjectService subjectService, UserManager<IdentityUser> userManager)
     {
         _chatService = chatService;
+        _subjectService = subjectService;
         _userManager = userManager;
     }
+
+    public IList<SubjectDto> Subjects { get; set; } = new List<SubjectDto>();
+    public IList<ChatSessionDto> RecentSessions { get; set; } = new List<ChatSessionDto>();
 
     public async Task<IActionResult> OnGetAsync()
     {
         var userId = _userManager.GetUserId(User) ?? "";
-        var sessions = await _chatService.GetAllSessionsByUserAsync(userId);
-        var latest = sessions.OrderByDescending(s => s.CreatedAt).FirstOrDefault();
+        
+        // Lấy danh sách môn học để hiển thị
+        Subjects = (await _subjectService.GetAllAsync()).ToList();
 
-        if (latest != null)
-            return RedirectToPage("Session", new { id = latest.SessionID });
+        // Lấy lịch sử chat
+        RecentSessions = (await _chatService.GetAllSessionsByUserAsync(userId)).Take(5).ToList();
 
-        var newSession = await _chatService.CreateSessionAsync(userId, "Phiên chat mới");
+        return Page();
+    }
+
+    public async Task<IActionResult> OnPostStartChatAsync(int? subjectId)
+    {
+        var userId = _userManager.GetUserId(User) ?? "";
+        var newSession = await _chatService.CreateSessionAsync(userId, subjectId, "Phiên chat mới");
         return RedirectToPage("Session", new { id = newSession.SessionID });
     }
 }

@@ -5,6 +5,7 @@ using DataAccessLayer.Repositories;
 using Microsoft.Extensions.Configuration;
 using ServiceLayer.DTOs;
 using ServiceLayer.Interfaces;
+using Microsoft.Extensions.Caching.Memory;
 
 namespace ServiceLayer.Services;
 
@@ -13,22 +14,27 @@ public class RagService : IRagService
     private readonly IDocumentRepository _docRepo;
     private readonly IHttpClientFactory _httpClientFactory;
     private readonly IConfiguration _config;
+    private readonly IMemoryCache _cache;
 
     public RagService(
         IDocumentRepository docRepo,
         IHttpClientFactory httpClientFactory,
-        IConfiguration config)
+        IConfiguration config,
+        IMemoryCache cache)
     {
         _docRepo = docRepo;
         _httpClientFactory = httpClientFactory;
         _config = config;
+        _cache = cache;
     }
 
     public async Task<RagResponseDto> AskAsync(
         string question,
         IEnumerable<ChatMessageDto>? conversationHistory = null,
+        int? subjectId = null,
         int topK = 5,
-        Func<string, Task>? onChunkReceived = null)
+        Func<string, Task>? onChunkReceived = null,
+        CancellationToken cancellationToken = default)
     {
         topK = int.TryParse(_config["Rag:TopK"], out var cfgK) ? cfgK : topK;
         var minScore = double.TryParse(_config["Rag:MinScore"], out var ms) ? ms : 0.35;
@@ -38,9 +44,31 @@ public class RagService : IRagService
         var queryVector = await EmbedQueryAsync(question, embedUrl);
 
         // ── Step 2: Load all indexed chunks and compute cosine similarity ───
-        var allChunks = (await _docRepo.GetAllIndexedChunksAsync()).ToList();
+        var cacheKey = subjectId.HasValue ? $"RagChunks_Subject_{subjectId}" : "RagChunks_Subject_All";
+        if (!_cache.TryGetValue(cacheKey, out List<RagCacheItemDto>? allChunks))
+        {
+            var entities = await _docRepo.GetAllIndexedChunksAsync(subjectId);
+            allChunks = entities.Select(c => new RagCacheItemDto
+            {
+                ChunkId = c.ChunkId,
+                DocumentId = c.DocumentId,
+                ChunkIndex = c.ChunkIndex,
+                ChunkContent = c.ChunkContent,
+                Embedding = c.Embedding,
+                SubjectId = c.Document.SubjectId,
+                SubjectName = c.Document.Subject?.SubjectName,
+                FileName = c.Document.FileName ?? "Unknown",
+                ParsedEmbedding = string.IsNullOrEmpty(c.Embedding) ? null : JsonSerializer.Deserialize<float[]>(c.Embedding)
+            }).ToList();
 
-        if (!allChunks.Any())
+            var cacheEntryOptions = new MemoryCacheEntryOptions()
+                .SetSlidingExpiration(TimeSpan.FromMinutes(30))
+                .SetAbsoluteExpiration(TimeSpan.FromHours(6));
+
+            _cache.Set(cacheKey, allChunks, cacheEntryOptions);
+        }
+
+        if (allChunks == null || !allChunks.Any())
         {
             return new RagResponseDto
             {
@@ -51,11 +79,10 @@ public class RagService : IRagService
         }
 
         var scoredChunks = allChunks
-            .Where(c => !string.IsNullOrEmpty(c.Embedding))
+            .Where(c => c.ParsedEmbedding != null)
             .Select(c =>
             {
-                var chunkVec = JsonSerializer.Deserialize<float[]>(c.Embedding!)!;
-                var score = CosineSimilarity(queryVector, chunkVec);
+                var score = CosineSimilarity(queryVector, c.ParsedEmbedding!);
                 return (chunk: c, score);
             })
             .Where(x => x.score >= minScore)
@@ -80,19 +107,19 @@ public class RagService : IRagService
         for (int i = 0; i < scoredChunks.Count; i++)
         {
             var (chunk, score) = scoredChunks[i];
-            contextBuilder.AppendLine($"[Đoạn {i + 1}] Tài liệu: {chunk.Document.FileName} (Môn: {chunk.Document.Subject?.SubjectName ?? "N/A"})");
+            contextBuilder.AppendLine($"[Đoạn {i + 1}] Tài liệu: {chunk.FileName} (Môn: {chunk.SubjectName ?? "N/A"})");
             contextBuilder.AppendLine(chunk.ChunkContent);
             contextBuilder.AppendLine();
         }
 
-        var answer = await CallLlmAsync(question, contextBuilder.ToString(), conversationHistory, onChunkReceived);
+        var answer = await CallLlmAsync(question, contextBuilder.ToString(), conversationHistory, onChunkReceived, cancellationToken);
 
         var sources = scoredChunks.Select(x => new RagChunkResultDto
         {
             ChunkID = x.chunk.ChunkId,
             DocumentID = x.chunk.DocumentId,
-            FileName = x.chunk.Document.FileName,
-            SubjectName = x.chunk.Document.Subject?.SubjectName,
+            FileName = x.chunk.FileName,
+            SubjectName = x.chunk.SubjectName,
             ChunkContent = x.chunk.ChunkContent.Length > 300
                 ? x.chunk.ChunkContent[..300] + "..."
                 : x.chunk.ChunkContent,
@@ -142,7 +169,8 @@ public class RagService : IRagService
         string question,
         string context,
         IEnumerable<ChatMessageDto>? conversationHistory = null,
-        Func<string, Task>? onChunkReceived = null)
+        Func<string, Task>? onChunkReceived = null,
+        CancellationToken cancellationToken = default)
     {
         var apiKey = _config["Groq:ApiKey"];
         var model = _config["Groq:Model"] ?? "llama3-70b-8192";
@@ -152,6 +180,7 @@ public class RagService : IRagService
 
         // ── Xây dựng mảng messages cho LLM (multi-turn) ─────────────────────
         var systemPrompt = "Bạn là trợ lý học tập. Chỉ trả lời dựa trên tài liệu được cung cấp. " +
+            "Nếu câu trả lời không có trong 'Ngữ cảnh tài liệu' được cung cấp bên dưới, hãy trả lời chính xác là 'Tôi không tìm thấy thông tin này trong tài liệu môn học' và không tự bịa ra câu trả lời. " +
             "BẮT BUỘC 100% dùng tiếng Việt (chữ Quốc ngữ). Nghiêm cấm dùng chữ Hán (Chinese characters) như 模, 隐藏, 暴. " +
             "Đối với thuật ngữ chuyên ngành (như Modularity, Encapsulation...), hãy giữ nguyên tiếng Anh hoặc dịch sang tiếng Việt thuần thục " +
             "(ví dụ: tính mô-đun hóa, tính đóng gói). " +
@@ -162,14 +191,23 @@ public class RagService : IRagService
             new { role = "system", content = systemPrompt }
         };
 
-        // Thêm lịch sử hội thoại trước đó (tối đa 10 tin nhắn gần nhất)
+        // Thêm lịch sử hội thoại trước đó (tối đa 10 tin nhắn, không vượt quá 3000 ký tự)
         if (conversationHistory != null)
         {
-            foreach (var msg in conversationHistory.OrderBy(m => m.Timestamp).TakeLast(10))
+            int currentHistoryLength = 0;
+            var historyToAdd = new List<object>();
+
+            foreach (var msg in conversationHistory.OrderByDescending(m => m.Timestamp).Take(10))
             {
+                if (currentHistoryLength + msg.MessageText.Length > 3000)
+                    break;
+
                 var historyRole = msg.Role == "user" ? "user" : "assistant";
-                messages.Add(new { role = historyRole, content = msg.MessageText });
+                historyToAdd.Insert(0, new { role = historyRole, content = msg.MessageText });
+                currentHistoryLength += msg.MessageText.Length;
             }
+
+            messages.AddRange(historyToAdd);
         }
 
         // Câu hỏi hiện tại kèm ngữ cảnh tài liệu (RAG context)
@@ -198,17 +236,17 @@ public class RagService : IRagService
             Content = JsonContent.Create(requestBody)
         };
 
-        using var response = await client.SendAsync(request, HttpCompletionOption.ResponseHeadersRead);
+        using var response = await client.SendAsync(request, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
 
         if (!response.IsSuccessStatusCode)
         {
-            var err = await response.Content.ReadAsStringAsync();
+            var err = await response.Content.ReadAsStringAsync(cancellationToken);
             return $"[Groq API lỗi {response.StatusCode}]: {err[..Math.Min(200, err.Length)]}";
         }
 
         if (onChunkReceived == null)
         {
-            var result = await response.Content.ReadFromJsonAsync<GroqResponse>();
+            var result = await response.Content.ReadFromJsonAsync<GroqResponse>(cancellationToken: cancellationToken);
             return result?.Choices?.FirstOrDefault()?.Message?.Content ?? "AI không trả về câu trả lời.";
         }
 
@@ -221,6 +259,8 @@ public class RagService : IRagService
 
         while (!reader.EndOfStream)
         {
+            cancellationToken.ThrowIfCancellationRequested();
+
             var line = await reader.ReadLineAsync();
             if (string.IsNullOrWhiteSpace(line)) continue;
             if (line.StartsWith("data: "))
@@ -243,6 +283,44 @@ public class RagService : IRagService
         }
 
         return fullAnswerBuilder.ToString();
+    }
+
+    public async Task<string> GenerateTitleAsync(string firstMessage)
+    {
+        var apiKey = _config["Groq:ApiKey"];
+        var model = _config["Groq:Model"] ?? "llama3-70b-8192";
+        if (string.IsNullOrWhiteSpace(apiKey)) return firstMessage.Length > 40 ? firstMessage[..40] + "…" : firstMessage;
+
+        var messages = new List<object>
+        {
+            new { role = "system", content = "Bạn là AI đặt tên. Dựa vào nội dung người dùng gửi, hãy tóm tắt và đặt tên cho cuộc hội thoại này bằng Tiếng Việt. CHỈ TRẢ VỀ TÊN (khoảng 3-6 từ), KHÔNG CẦN GIẢI THÍCH HAY BỎ TRONG NGOẶC KÉP." },
+            new { role = "user", content = firstMessage }
+        };
+
+        var requestBody = new
+        {
+            model,
+            messages = messages.ToArray(),
+            temperature = 0.5,
+            max_tokens = 20
+        };
+
+        var client = _httpClientFactory.CreateClient();
+        client.DefaultRequestHeaders.Authorization = new System.Net.Http.Headers.AuthenticationHeaderValue("Bearer", apiKey);
+        
+        var request = new HttpRequestMessage(HttpMethod.Post, "https://api.groq.com/openai/v1/chat/completions")
+        {
+            Content = JsonContent.Create(requestBody)
+        };
+
+        try {
+            using var response = await client.SendAsync(request);
+            if (!response.IsSuccessStatusCode) return firstMessage.Length > 40 ? firstMessage[..40] + "…" : firstMessage;
+            var result = await response.Content.ReadFromJsonAsync<GroqResponse>();
+            return result?.Choices?.FirstOrDefault()?.Message?.Content?.Trim('"', '\'', ' ', '\n') ?? firstMessage;
+        } catch {
+            return firstMessage.Length > 40 ? firstMessage[..40] + "…" : firstMessage;
+        }
     }
 
     // ── Private response models ────────────────────────────────────────────

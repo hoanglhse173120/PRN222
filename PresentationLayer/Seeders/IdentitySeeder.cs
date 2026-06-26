@@ -1,8 +1,8 @@
 using Microsoft.AspNetCore.Identity;
 
-namespace PresentationLayer.Data
+namespace PresentationLayer.Seeders
 {
-    public static class DataSeeder
+    public static class IdentitySeeder
     {
         public static async Task SeedRolesAndUsersAsync(IServiceProvider serviceProvider)
         {
