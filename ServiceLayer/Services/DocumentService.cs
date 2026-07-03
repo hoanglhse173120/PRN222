@@ -10,6 +10,10 @@ using Microsoft.Extensions.Caching.Memory;
 
 namespace ServiceLayer.Services;
 
+/// <summary>
+/// Service thực thi các nghiệp vụ cốt lõi về tài liệu:
+/// Upload, truy xuất thông tin, xử lý file và đặc biệt là Index (tiền xử lý) tài liệu để phục vụ kiến trúc RAG.
+/// </summary>
 public class DocumentService : IDocumentService
 {
     private readonly IDocumentRepository _repo;
@@ -54,6 +58,10 @@ public class DocumentService : IDocumentService
         return MapToDto(doc);
     }
 
+    /// <summary>
+    /// Lưu thông tin tài liệu mới (metadata của file) vào cơ sở dữ liệu sau khi được upload.
+    /// Trạng thái IsIndexed ban đầu luôn là false.
+    /// </summary>
     public async Task<DocumentDto> UploadAsync(int subjectId, string fileName, string fileType, string filePath, long? fileSizeKB, string userId)
     {
         var doc = new Document
@@ -130,6 +138,10 @@ public class DocumentService : IDocumentService
         }
     }
 
+    /// <summary>
+    /// Xóa hoàn toàn một tài liệu gồm: Record tài liệu, các thẻ Meta/Chucks, các tin nhắn tham chiếu nguồn, 
+    /// Clear system cache và cuối cùng là xoá file vật lý ở ổ cứng.
+    /// </summary>
     public async Task DeleteAsync(int id, string webRootPath)
     {
         var doc = await _repo.GetByIdAsync(id);
@@ -162,6 +174,13 @@ public class DocumentService : IDocumentService
         }
     }
 
+    /// <summary>
+    /// Trái tim của quá trình Ingestion (Tiền xử lý) trong hệ thống RAG:
+    /// 1. Đọc và trích xuất nguyên bản text từ file (PDF, Docx, TXT).
+    /// 2. Cắt nhỏ (Chunk) text để tối ưu cho mô hình ngôn ngữ vừa và nhỏ.
+    /// 3. Gọi model mã hoá (EmbedService) qua Python API để quy đổi chuỗi text thành Vector.
+    /// 4. Lưu lại các Chunk kèm vector (Embedding) tương đối vào Database để sẵn sàng đem so sánh Cosine Similarity.
+    /// </summary>
     public async Task<int> IndexDocumentAsync(int documentId, string webRootPath, int chunkSize = 500, int overlap = 50)
     {
         var doc = await _repo.GetByIdAsync(documentId)

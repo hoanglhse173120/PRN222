@@ -6,6 +6,11 @@ using System.Collections.Concurrent;
 
 namespace PresentationLayer.Hubs;
 
+/// <summary>
+/// SignalR Hub chịu trách nhiệm giao tiếp thời gian thực (Real-time) cho tính năng Chatbot (RAG).
+/// Nhận tin nhắn từ client, đẩy cho thuật toán RAG xử lý và stream câu trả lời liên tục (chunk) về lại cho người dùng.
+/// Đồng thời xử lý các tác vụ như lưu tin nhắn vào DB, đặt tên session.
+/// </summary>
 [Authorize(Roles = "Admin,Student")]
 public class ChatHub : Hub
 {

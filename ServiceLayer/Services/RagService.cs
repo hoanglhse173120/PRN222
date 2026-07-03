@@ -9,6 +9,11 @@ using Microsoft.Extensions.Caching.Memory;
 
 namespace ServiceLayer.Services;
 
+/// <summary>
+/// Dịch vụ cốt lõi xử lý luồng (pipeline) của mô hình RAG (Retrieval-Augmented Generation).
+/// Cung cấp các hàm nhúng câu hỏi (Embedding), tìm kiếm đoạn tài liệu tương đồng nhất 
+/// trong Database và tích hợp sinh văn bản hội thoại (LLM - Groq).
+/// </summary>
 public class RagService : IRagService
 {
     private readonly IDocumentRepository _docRepo;
@@ -28,6 +33,19 @@ public class RagService : IRagService
         _cache = cache;
     }
 
+    /// <summary>
+    /// Xử lý toàn diện câu hỏi của người dùng, thực thi 3 bước của RAG:
+    /// Bước 1: Gọi embed model để mã hoá câu hỏi đầu vào thành Vector.
+    /// Bước 2: Truy xuất Database lấy Vectors, tính độ gần gũi bằng Cosine Similarity để lọc topK chunk khớp.
+    /// Bước 3: Ráp chunk (đóng gói ngữ cảnh) + prompt, gọi LLM qua Groq API lấy câu trả lời và luồng (stream) kết quả về.
+    /// </summary>
+    /// <param name="question">Nội dung câu hỏi của người dùng</param>
+    /// <param name="conversationHistory">Chuỗi các tin nhắn trước đó (lịch sử trò chuyện cho multi-turn chat)</param>
+    /// <param name="subjectId">Chỉ định tìm không gian con theo môn học (tăng tốc độ và giảm nhiễu), null khi muốn tìm toàn cục</param>
+    /// <param name="topK">Giới hạn số lượng chunks tốt nhất được mượn làm tri thức (context)</param>
+    /// <param name="onChunkReceived">Callback đón nhận Real-time chữ của AI khi đang nói</param>
+    /// <param name="cancellationToken">Cờ huỷ khi người dùng nhấn StopGenerating</param>
+    /// <returns>Đối tượng đóng gói đáp án toàn vẹn và thông tin trích dẫn nguồn</returns>
     public async Task<RagResponseDto> AskAsync(
         string question,
         IEnumerable<ChatMessageDto>? conversationHistory = null,
@@ -136,6 +154,11 @@ public class RagService : IRagService
     }
 
     // ── Cosine Similarity ───────────────────────────────────────────────────
+    /// <summary>
+    /// Thuật toán tìm kiếm độ tương đồng Cosine Similarity giữa 2 vector.
+    /// Bằng thương của tích vô hướng trên tích độ dài.
+    /// Trả về số thập phân từ -1 đến 1 (Càng gần 1, hai đoạn text càng mang nghĩa giống nhau).
+    /// </summary>
     private static double CosineSimilarity(float[] a, float[] b)
     {
         if (a.Length != b.Length) return 0;
@@ -150,6 +173,9 @@ public class RagService : IRagService
     }
 
     // ── Embed query via Python API ─────────────────────────────────────────
+    /// <summary>
+    /// Gọi microservice Python (FastAPI/HuggingFace) để nhúng câu văn thành vector embeddings (biểu diễn số toán học).
+    /// </summary>
     private async Task<float[]> EmbedQueryAsync(string query, string embedUrl)
     {
         var client = _httpClientFactory.CreateClient();
@@ -165,6 +191,11 @@ public class RagService : IRagService
     }
 
     // ── Call Groq REST API (multi-turn) ─────────────────────────────────────
+    /// <summary>
+    /// Tích hợp Model ngôn ngữ lớn (LLM - LLama3 / Gemini qua API Groq).
+    /// Ráp các chunk tìm được làm "system instruction context" đảm bảo BOT không bị Halucination (bịa chuyện).
+    /// Hỗ trợ luồng SSE (Server-Sent Events) để trả dữ liệu theo Stream mượt mà.
+    /// </summary>
     private async Task<string> CallLlmAsync(
         string question,
         string context,
@@ -285,6 +316,10 @@ public class RagService : IRagService
         return fullAnswerBuilder.ToString();
     }
 
+    /// <summary>
+    /// Tự động sinh tên chủ đề cực kỳ ngắn gọn cho đoạn chat dựa vào lời mở đầu của User.
+    /// Chức năng AI tóm tắt.
+    /// </summary>
     public async Task<string> GenerateTitleAsync(string firstMessage)
     {
         var apiKey = _config["Groq:ApiKey"];
