@@ -1,8 +1,11 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 
 namespace DataAccessLayer.Entities;
 
+/// <summary>
+/// Represents a user in the ASP.NET Core Identity system.
+/// </summary>
 public partial class AspNetUser
 {
     public string Id { get; set; } = null!;
