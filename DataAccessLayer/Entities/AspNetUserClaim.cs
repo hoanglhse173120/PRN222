@@ -14,4 +14,5 @@ public partial class AspNetUserClaim
     public string? ClaimValue { get; set; }
 
     public virtual AspNetUser User { get; set; } = null!;
+
 }
