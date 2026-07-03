@@ -14,7 +14,7 @@
 
 ## 🏗️ Kiến trúc
 
-![Architecture](Architecture.jpg)
+![System Architecture](Architecture.jpg)
 
 ```
 PresentationLayer/    ← Razor Pages, SignalR Hubs, Program.cs
