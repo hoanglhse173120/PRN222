@@ -39,18 +39,27 @@ public class DocumentService : IDocumentService
         _cache = cache;
     }
 
+    /// <summary>
+    /// Lấy danh sách toàn bộ các tài liệu đang có trong hệ thống (Mapping sang Dto gọn nhẹ).
+    /// </summary>
     public async Task<IEnumerable<DocumentDto>> GetAllAsync()
     {
         var entities = await _repo.GetAllAsync();
         return entities.Select(MapToDto);
     }
 
+    /// <summary>
+    /// Truy xuất danh sách tài liệu được phân quyền theo một môn học (Subject) nhất định.
+    /// </summary>
     public async Task<IEnumerable<DocumentDto>> GetBySubjectAsync(int subjectId)
     {
         var entities = await _repo.GetBySubjectAsync(subjectId);
         return entities.Select(MapToDto);
     }
 
+    /// <summary>
+    /// Đọc thông tin cơ bản Metadata của một tài liệu dựa theo Khóa chính (Id).
+    /// </summary>
     public async Task<DocumentDto?> GetByIdAsync(int id)
     {
         var doc = await _repo.GetByIdAsync(id);
@@ -97,6 +106,10 @@ public class DocumentService : IDocumentService
         };
     }
 
+    /// <summary>
+    /// Lấy thông tin chi tiết một tài liệu cùng với tất cả các đoạn cắt (Chunks) nội dung và
+    /// Vector Embeddings của tài liệu đó. Phục vụ việc xem trước (Preview) tài liệu đã index.
+    /// </summary>
     public async Task<DocumentDetailsDto?> GetDetailsWithChunksAsync(int id)
     {
         var doc = await _repo.GetByIdWithChunksAsync(id);

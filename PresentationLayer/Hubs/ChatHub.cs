@@ -25,8 +25,9 @@ public class ChatHub : Hub
     }
 
     /// <summary>
-    /// Được gọi từ client khi người dùng gửi tin nhắn.
-    /// Hub lưu tin, gọi RAG pipeline, rồi push kết quả về client qua WebSocket.
+    /// Được gọi từ Client khi người dùng gửi tin nhắn thông qua WebSocket (SignalR).
+    /// Hàm này đảm nhiệm việc lưu lịch sử tin nhắn, tự động sinh tiêu đề (nếu là tin đầu tiên),
+    /// gọi Pipeline RAG để truy xuất thông tin và đẩy (stream) câu trả lời về lại Client để tạo trải nghiệm sinh động.
     /// </summary>
     public async Task SendMessage(int sessionId, string message)
     {
@@ -123,6 +124,10 @@ public class ChatHub : Hub
         }
     }
 
+    /// <summary>
+    /// Kích hoạt cờ huỷ (CancellationToken) để tạm dừng quá trình AI sinh văn bản đang thực thi (nếu có).
+    /// Cải thiện trải nghiệm người dùng khi AI sinh lan man hoặc người dùng thấy đủ kết quả.
+    /// </summary>
     public void StopGenerating()
     {
         if (_activeGenerations.TryGetValue(Context.ConnectionId, out var cts))

@@ -6,6 +6,10 @@ using System.Linq;
 
 namespace ServiceLayer.Services;
 
+/// <summary>
+/// Service quản lý nghiệp vụ Hội thoại (Session) và Tin nhắn (Message) cho Chatbot.
+/// Hỗ trợ luồng dữ liệu quản lý phiên trò chuyện, lưu thông tin trích dẫn nguồn khi chat.
+/// </summary>
 public class ChatService : IChatService
 {
     private readonly IChatSessionRepository _sessionRepo;
@@ -22,12 +26,20 @@ public class ChatService : IChatService
         _messageSourceRepo = messageSourceRepo;
     }
 
+    /// <summary>
+    /// Lấy toàn bộ danh sách phiên trò chuyện của một tải khoản cụ thể. 
+    /// Dùng cho thanh Menu Sidebar bên trái.
+    /// </summary>
     public async Task<IEnumerable<ChatSessionDto>> GetAllSessionsByUserAsync(string userId)
     {
         var sessions = await _sessionRepo.GetAllOrderedByUserAsync(userId);
         return sessions.Select(MapSessionToDto);
     }
 
+    /// <summary>
+    /// Tạo nhanh một phiên chat mới lưu cơ sở dữ liệu. 
+    /// Phiên này có thể gắn liền với môn học để filter tri thức RAG hoặc không có môn học (tìm tự do).
+    /// </summary>
     public async Task<ChatSessionDto> CreateSessionAsync(string userId, int? subjectId, string? sessionName = null)
     {
         var session = new ChatSession
@@ -116,6 +128,11 @@ public class ChatService : IChatService
         }
     }
 
+    /// <summary>
+    /// Lưu vào hệ thống một tin nhắn đến từ AI hoặc người dùng, 
+    /// kèm thêm thông tin nguồn kham khảo liên kết (các đoạn chunk lấy từ tài liệu) 
+    /// đem lại khả năng minh bạch (Citation) của kết quả trợ lý AI sinh ra.
+    /// </summary>
     public async Task<ChatMessageDto> AddMessageWithSourcesAsync(
         int sessionId, string role, string messageText,
         List<RagChunkResultDto> sources)
