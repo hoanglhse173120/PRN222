@@ -26,7 +26,12 @@ public class ChatbotDbContext : IdentityDbContext<IdentityUser>
 
         // Define Primary Keys for entities that do not follow the default convention
         modelBuilder.Entity<DocumentChunk>().HasKey(c => c.ChunkId);
+        modelBuilder.Entity<DocumentChunk>().HasIndex(c => c.DocumentId); // Index for performance
+
         modelBuilder.Entity<ChatSession>().HasKey(s => s.SessionId);
+        modelBuilder.Entity<ChatSession>().HasIndex(s => s.UserId); // Index for performance
+        modelBuilder.Entity<ChatSession>().HasIndex(s => s.SubjectId); // Index for performance
+
         modelBuilder.Entity<ChatMessage>().HasKey(m => m.MessageId);
         modelBuilder.Entity<MessageSource>().HasKey(ms => ms.SourceId);
         modelBuilder.Entity<ExperimentConfig>().HasKey(e => e.ConfigId);
@@ -51,6 +56,13 @@ public class ChatbotDbContext : IdentityDbContext<IdentityUser>
             .HasForeignKey(d => d.SubjectId)
             .OnDelete(DeleteBehavior.Cascade);
 
+        // Document → IdentityUser (N:1, set null)
+        modelBuilder.Entity<Document>()
+            .HasOne(d => d.UploadedByUser)
+            .WithMany()
+            .HasForeignKey(d => d.UploadedByUserId)
+            .OnDelete(DeleteBehavior.SetNull);
+
         // Document → DocumentChunks (1:N, cascade delete)
         modelBuilder.Entity<DocumentChunk>()
             .HasOne(c => c.Document)
@@ -71,6 +83,13 @@ public class ChatbotDbContext : IdentityDbContext<IdentityUser>
             .WithMany()
             .HasForeignKey(s => s.UserId)
             .OnDelete(DeleteBehavior.Cascade);
+
+        // ChatSession → Subject (N:1, set null)
+        modelBuilder.Entity<ChatSession>()
+            .HasOne(s => s.Subject)
+            .WithMany()
+            .HasForeignKey(s => s.SubjectId)
+            .OnDelete(DeleteBehavior.SetNull);
 
         // ChatMessage → MessageSources (1:N, cascade delete)
         modelBuilder.Entity<MessageSource>()

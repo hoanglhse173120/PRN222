@@ -2,21 +2,18 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
-using Microsoft.EntityFrameworkCore;
 using PresentationLayer.ViewModels;
 using ServiceLayer.Interfaces;
 using ServiceLayer.DTOs;
-using DataAccessLayer.Context;
 
 namespace PresentationLayer.Pages.Document;
 
-[Authorize(Roles = "Teacher,Admin")]
+[Authorize(Roles = "Teacher")]
 public class UploadModel : PageModel
 {
     private readonly IDocumentService _documentService;
     private readonly ISubjectService _subjectService;
     private readonly UserManager<IdentityUser> _userManager;
-    private readonly ChatbotDbContext _db;
     private readonly IWebHostEnvironment _env;
 
     private static readonly string[] AllowedExtensions = { ".pdf", ".docx", ".pptx", ".doc" };
@@ -25,13 +22,11 @@ public class UploadModel : PageModel
         IDocumentService documentService, 
         ISubjectService subjectService, 
         UserManager<IdentityUser> userManager,
-        ChatbotDbContext db,
         IWebHostEnvironment env)
     {
         _documentService = documentService;
         _subjectService = subjectService;
         _userManager = userManager;
-        _db = db;
         _env = env;
     }
 
@@ -41,47 +36,28 @@ public class UploadModel : PageModel
     public async Task OnGetAsync()
     {
         var allSubjects = await _subjectService.GetAllAsync();
-        IEnumerable<SubjectDto> filteredSubjects = allSubjects;
+        
+        var userId = _userManager.GetUserId(User) ?? "";
+        var assignedIds = await _subjectService.GetAssignedSubjectIdsAsync(userId);
 
-        if (User.IsInRole("Teacher"))
-        {
-            var userId = _userManager.GetUserId(User) ?? "";
-            var assignedIds = await _db.TeacherSubjects
-                .Where(ts => ts.TeacherId == userId)
-                .Select(ts => ts.SubjectId)
-                .ToListAsync();
-
-            filteredSubjects = allSubjects.Where(s => assignedIds.Contains(s.SubjectID));
-        }
-
-        Input.Subjects = filteredSubjects;
+        Input.Subjects = allSubjects.Where(s => assignedIds.Contains(s.SubjectID));
     }
 
     public async Task<IActionResult> OnPostAsync()
     {
         var allSubjects = await _subjectService.GetAllAsync();
         
-        if (User.IsInRole("Teacher"))
+        var userId = _userManager.GetUserId(User) ?? "";
+        var assignedIds = await _subjectService.GetAssignedSubjectIdsAsync(userId);
+
+        if (!assignedIds.Contains(Input.SubjectId))
         {
-            var userId = _userManager.GetUserId(User) ?? "";
-            var assignedIds = await _db.TeacherSubjects
-                .Where(ts => ts.TeacherId == userId)
-                .Select(ts => ts.SubjectId)
-                .ToListAsync();
-
-            if (!assignedIds.Contains(Input.SubjectId))
-            {
-                ModelState.AddModelError("", "Bạn không có quyền upload tài liệu cho môn học này.");
-                Input.Subjects = allSubjects.Where(s => assignedIds.Contains(s.SubjectID));
-                return Page();
-            }
-
+            ModelState.AddModelError("", "Bạn không có quyền upload tài liệu cho môn học này.");
             Input.Subjects = allSubjects.Where(s => assignedIds.Contains(s.SubjectID));
+            return Page();
         }
-        else
-        {
-            Input.Subjects = allSubjects;
-        }
+
+        Input.Subjects = allSubjects.Where(s => assignedIds.Contains(s.SubjectID));
 
         if (Input.File == null || Input.File.Length == 0)
         {
@@ -113,16 +89,20 @@ public class UploadModel : PageModel
 
         var relativePath = $"/uploads/{Input.SubjectId}/{uniqueName}";
         var fileSizeKB = file.Length / 1024;
+        
 
-        await _documentService.UploadAsync(
+        var newDoc = await _documentService.UploadAsync(
             Input.SubjectId,
             file.FileName,
             ext.TrimStart('.').ToUpper(),
             relativePath,
-            fileSizeKB
+            fileSizeKB,
+            userId
         );
 
-        TempData["Success"] = $"Upload \"{file.FileName}\" thành công! Tài liệu đang chờ được index.";
+        var chunkCount = await _documentService.IndexDocumentAsync(newDoc.DocumentID, _env.WebRootPath);
+
+        TempData["Success"] = $"Upload \"{file.FileName}\" thành công! Đã tự động phân tách thành {chunkCount} đoạn.";
         return RedirectToPage("Index");
     }
 }

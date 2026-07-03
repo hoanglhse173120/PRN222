@@ -1,4 +1,4 @@
-﻿using System;
+using System;
 using System.Collections.Generic;
 using Microsoft.EntityFrameworkCore;
 
@@ -166,6 +166,9 @@ public partial class ChatbotRbldbContext : DbContext
         {
             entity.HasKey(e => e.SessionId).HasName("PK__ChatSess__C9F49270868AE3B9");
 
+            entity.HasIndex(e => e.UserId, "IX_ChatSessions_UserId");
+            entity.HasIndex(e => e.SubjectId, "IX_ChatSessions_SubjectId");
+
             entity.Property(e => e.SessionId).HasColumnName("SessionID");
             entity.Property(e => e.CreatedAt)
                 .HasDefaultValueSql("(getdate())")
@@ -199,6 +202,8 @@ public partial class ChatbotRbldbContext : DbContext
         modelBuilder.Entity<DocumentChunk>(entity =>
         {
             entity.HasKey(e => e.ChunkId).HasName("PK__Document__FBFF9D208483EF32");
+
+            entity.HasIndex(e => e.DocumentId, "IX_DocumentChunks_DocumentId");
 
             entity.Property(e => e.ChunkId).HasColumnName("ChunkID");
             entity.Property(e => e.CreatedAt)

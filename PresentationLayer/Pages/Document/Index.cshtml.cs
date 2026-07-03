@@ -2,10 +2,8 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
-using Microsoft.EntityFrameworkCore;
 using PresentationLayer.ViewModels;
 using ServiceLayer.Interfaces;
-using DataAccessLayer.Context;
 
 namespace PresentationLayer.Pages.Document;
 
@@ -16,20 +14,17 @@ public class IndexModel : PageModel
     private readonly ISubjectService _subjectService;
     private readonly IWebHostEnvironment _env;
     private readonly UserManager<IdentityUser> _userManager;
-    private readonly ChatbotDbContext _db;
 
     public IndexModel(
         IDocumentService documentService, 
         ISubjectService subjectService,
         IWebHostEnvironment env,
-        UserManager<IdentityUser> userManager,
-        ChatbotDbContext db)
+        UserManager<IdentityUser> userManager)
     {
         _documentService = documentService;
         _subjectService = subjectService;
         _env = env;
         _userManager = userManager;
-        _db = db;
     }
 
     [BindProperty(SupportsGet = true)]
@@ -47,6 +42,15 @@ public class IndexModel : PageModel
             ? await _documentService.GetBySubjectAsync(SubjectId.Value)
             : await _documentService.GetAllAsync();
 
+        if (User.IsInRole("Teacher"))
+        {
+            var userId = _userManager.GetUserId(User) ?? "";
+            var assignedIds = await _subjectService.GetAssignedSubjectIdsAsync(userId);
+            
+            subjects = subjects.Where(s => assignedIds.Contains(s.SubjectID));
+            documents = documents.Where(d => assignedIds.Contains(d.SubjectID));
+        }
+
         documents = Filter switch
         {
             "indexed" => documents.Where(d => d.IsIndexed == true),
@@ -63,41 +67,15 @@ public class IndexModel : PageModel
         };
     }
 
-    public async Task<IActionResult> OnPostMarkIndexedAsync(int id)
-    {
-        if (User.IsInRole("Teacher"))
-        {
-            var doc = await _documentService.GetAllAsync();
-            var target = doc.FirstOrDefault(d => d.DocumentID == id);
-            if (target == null) return NotFound();
-
-            var userId = _userManager.GetUserId(User) ?? "";
-            var assignedIds = await _db.TeacherSubjects
-                .Where(ts => ts.TeacherId == userId)
-                .Select(ts => ts.SubjectId)
-                .ToListAsync();
-
-            if (!assignedIds.Contains(target.SubjectID))
-            {
-                TempData["Error"] = "Bạn chỉ được index tài liệu thuộc môn học được phân công.";
-                return RedirectToPage();
-            }
-        }
-
-        try
-        {
-            var chunkCount = await _documentService.IndexDocumentAsync(id, _env.WebRootPath);
-            TempData["Success"] = $"Index thành công! Đã tách thành {chunkCount} chunks và lưu vào database.";
-        }
-        catch (Exception ex)
-        {
-            TempData["Error"] = $"Lỗi khi index: {ex.Message}";
-        }
-        return RedirectToPage();
-    }
 
     public async Task<IActionResult> OnPostDeleteAsync(int id)
     {
+        if (User.IsInRole("Student"))
+        {
+            TempData["Error"] = "Bạn không có quyền xoá tài liệu.";
+            return RedirectToPage();
+        }
+
         if (User.IsInRole("Teacher"))
         {
             var doc = await _documentService.GetAllAsync();
@@ -105,10 +83,7 @@ public class IndexModel : PageModel
             if (target == null) return NotFound();
 
             var userId = _userManager.GetUserId(User) ?? "";
-            var assignedIds = await _db.TeacherSubjects
-                .Where(ts => ts.TeacherId == userId)
-                .Select(ts => ts.SubjectId)
-                .ToListAsync();
+            var assignedIds = await _subjectService.GetAssignedSubjectIdsAsync(userId);
 
             if (!assignedIds.Contains(target.SubjectID))
             {
@@ -117,7 +92,7 @@ public class IndexModel : PageModel
             }
         }
 
-        await _documentService.DeleteAsync(id);
+        await _documentService.DeleteAsync(id, _env.WebRootPath);
         TempData["Success"] = "Đã xoá tài liệu thành công.";
         return RedirectToPage();
     }

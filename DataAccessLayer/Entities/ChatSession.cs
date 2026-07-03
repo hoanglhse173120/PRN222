@@ -15,5 +15,8 @@ public partial class ChatSession
 
     public virtual Microsoft.AspNetCore.Identity.IdentityUser? User { get; set; }
 
+    public int? SubjectId { get; set; }
+    public virtual Subject? Subject { get; set; }
+
     public virtual ICollection<ChatMessage> ChatMessages { get; set; } = new List<ChatMessage>();
 }

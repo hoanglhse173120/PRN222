@@ -28,11 +28,12 @@ public class ChatService : IChatService
         return sessions.Select(MapSessionToDto);
     }
 
-    public async Task<ChatSessionDto> CreateSessionAsync(string userId, string? sessionName = null)
+    public async Task<ChatSessionDto> CreateSessionAsync(string userId, int? subjectId, string? sessionName = null)
     {
         var session = new ChatSession
         {
             UserId = userId,
+            SubjectId = subjectId,
             SessionName = sessionName ?? "Phiên trò chuyện mới",
             CreatedAt = DateTime.Now
         };
@@ -67,8 +68,10 @@ public class ChatService : IChatService
         return new ChatSessionDto
         {
             SessionID = session.SessionId,
-            SessionName = session.SessionName,
+            SessionName = session.SessionName ?? "Phiên chat mới",
             CreatedAt = session.CreatedAt ?? DateTime.MinValue,
+            SubjectId = session.SubjectId,
+            SubjectName = session.Subject?.SubjectName,
             ChatMessages = session.ChatMessages?.Select(MapMessageToDto).ToList() ?? new List<ChatMessageDto>()
         };
     }

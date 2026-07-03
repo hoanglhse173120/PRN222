@@ -221,14 +221,12 @@
                     <i class="bi bi-layout-sidebar-reverse"></i>
                 </button>
             </div>
-            <form asp-page="/Chat/Session" asp-page-handler="Create" method="post" class="new-chat-form">
-                @Html.AntiForgeryToken()
-                <input type="hidden" name="id" value="@Model.Id" />
-                <button type="submit" class="new-chat-btn">
+            <div class="new-chat-form" style="padding: 0 0.85rem;">
+                <a href="/Chat/Index" class="new-chat-btn">
                     <i class="bi bi-plus-lg"></i>
                     <span class="btn-label">Phiên chat mới</span>
-                </button>
-            </form>
+                </a>
+            </div>
         </div>
 
         <div class="sidebar-section-title">Lịch sử trò chuyện</div>
@@ -242,18 +240,23 @@
                        class="session-item @(s.SessionID == Model.Session.SessionID ? "active" : "")"
                        id="session-item-@s.SessionID"
                        title="@s.SessionName">
-                        <div class="session-item-inner">
+                        <div class="session-item-inner" ondblclick="event.preventDefault(); promptRename(@s.SessionID, '@Html.Raw(s.SessionName.Replace("'", "\\'"))')">
                             <i class="bi bi-chat-text session-icon"></i>
-                            <span class="session-item-name" id="session-name-@s.SessionID">@s.SessionName</span>
+                            <span class="session-item-name" id="session-name-@s.SessionID">@(string.IsNullOrEmpty(s.SubjectName) ? s.SessionName : $"[{s.SubjectName}] {s.SessionName}")</span>
                         </div>
-                        <form asp-page="/Chat/Session" asp-page-handler="Delete" method="post"
-                              onsubmit="return confirm('Xóa phiên này?')" style="display:inline;" onclick="event.stopPropagation()">
-                            @Html.AntiForgeryToken()
-                            <input type="hidden" name="id" value="@s.SessionID" />
-                            <button type="submit" class="session-item-delete" title="Xóa">
-                                <i class="bi bi-trash3"></i>
+                        <div style="display: flex; align-items: center;">
+                            <button type="button" class="session-item-delete" title="Đổi tên" onclick="event.preventDefault(); event.stopPropagation(); promptRename(@s.SessionID, '@Html.Raw(s.SessionName.Replace("'", "\\'"))')">
+                                <i class="bi bi-pencil"></i>
                             </button>
-                        </form>
+                            <form asp-page="/Chat/Session" asp-page-handler="Delete" method="post"
+                                  onsubmit="return confirm('Xóa phiên này?')" style="display:inline;" onclick="event.stopPropagation()">
+                                @Html.AntiForgeryToken()
+                                <input type="hidden" name="id" value="@s.SessionID" />
+                                <button type="submit" class="session-item-delete" title="Xóa">
+                                    <i class="bi bi-trash3"></i>
+                                </button>
+                            </form>
+                        </div>
                     </a>
                 }
             }
@@ -267,12 +270,18 @@
         </div>
     </aside>
 
+    <form id="renameForm" method="post" asp-page-handler="Rename" style="display:none;">
+        @Html.AntiForgeryToken()
+        <input type="hidden" name="id" id="renameId" />
+        <input type="hidden" name="newName" id="renameName" />
+    </form>
+
     <!-- ─── Chat main ─── -->
     <main class="chat-main">
         <div class="chat-topbar">
             <span class="topbar-title" id="topbarTitle">
                 <i class="bi bi-chat-dots me-1" style="color:var(--primary);opacity:.7;"></i>
-                <span id="topbarSessionName">@Model.Session.SessionName</span>
+                <span id="topbarSessionName">@(string.IsNullOrEmpty(Model.Session.SubjectName) ? "Chat Tự do" : Model.Session.SubjectName) - @Model.Session.SessionName</span>
             </span>
             <button class="btn-export" onclick="exportChat()"><i class="bi bi-download"></i> Xuất lịch sử</button>
             <span class="topbar-badge ms-2"><i class="bi bi-stars me-1"></i>RAG · Groq</span>
@@ -303,8 +312,9 @@
                             <div class="msg-content">
                                 <div class="msg-bubble">
                                     @{
+                                        var encodedMsg = System.Net.WebUtility.HtmlEncode(msg.MessageText);
                                         var rendered = System.Text.RegularExpressions.Regex
-                                            .Replace(msg.MessageText, @"\*\*(.*?)\*\*", "<strong>$1</strong>")
+                                            .Replace(encodedMsg, @"\*\*(.*?)\*\*", "<strong>$1</strong>")
                                             .Replace("\n", "<br/>");
                                     }
                                     @Html.Raw(rendered)
@@ -342,6 +352,11 @@
         </div>
 
         <div class="chat-input-area">
+            <div id="stopGeneratingContainer" style="display:none; text-align:center; margin-bottom: 10px;">
+                <button type="button" class="btn btn-sm" id="stopBtn" style="border-radius:20px; font-size:0.85rem; padding: 4px 14px; background: white; border: 1px solid #f87171; color: #ef4444; box-shadow: 0 2px 6px rgba(239, 68, 68, 0.1);">
+                    <i class="bi bi-stop-circle me-1"></i> Dừng tạo
+                </button>
+            </div>
             <div class="input-shell">
                 <input type="text" id="newMessage"
                        placeholder="Hỏi AI về tài liệu..." autocomplete="off" autofocus />
@@ -380,6 +395,8 @@
     const msgsInner = document.getElementById('msgsInner');
     const input     = document.getElementById('newMessage');
     const sendBtn   = document.getElementById('sendBtn');
+    const stopBtn   = document.getElementById('stopBtn');
+    const stopContainer = document.getElementById('stopGeneratingContainer');
 
     chatBox.scrollTop = chatBox.scrollHeight;
 
@@ -432,8 +449,8 @@
                 bubble.style.display = 'block';
                 isFirstChunk = false;
             }
-            // Hiển thị trực tiếp, xuống dòng nếu có
-            bubble.innerHTML += escapeHtml(chunk).replace(/\n/g, '<br/>');
+            // Hiển thị trực tiếp, xuống dòng nếu có. Backend đã encode HTML để chống XSS.
+            bubble.innerHTML += chunk.replace(/\n/g, '<br/>');
             chatBox.scrollTop = chatBox.scrollHeight;
         }
     });
@@ -468,6 +485,8 @@
         }
         if (newSessionName) updateSessionName(newSessionName);
         sendBtn.disabled = false;
+        stopContainer.style.display = 'none';
+        stopBtn.innerHTML = '<i class="bi bi-stop-circle me-1"></i> Dừng tạo';
         input.focus();
         chatBox.scrollTop = chatBox.scrollHeight;
         currentAiBubbleId = null;
@@ -480,6 +499,8 @@
                 `<div class="msg-bubble text-danger">⚠️ ${escapeHtml(errorMsg)}</div>`;
         }
         sendBtn.disabled = false;
+        stopContainer.style.display = 'none';
+        stopBtn.innerHTML = '<i class="bi bi-stop-circle me-1"></i> Dừng tạo';
         input.focus();
         currentAiBubbleId = null;
     });
@@ -490,13 +511,24 @@
         sendBtn.disabled = true;
         isFirstChunk = true;
         input.value = '';
+        stopContainer.style.display = 'block';
         try {
             await connection.invoke('SendMessage', CURRENT_SESSION_ID, messageText);
         } catch (err) {
             console.error('SignalR invoke error:', err);
             sendBtn.disabled = false;
+            stopContainer.style.display = 'none';
         }
     }
+
+    stopBtn.addEventListener('click', async () => {
+        stopBtn.innerHTML = '<span class="spinner-border spinner-border-sm me-1"></span> Đang dừng...';
+        try {
+            await connection.invoke('StopGenerating');
+        } catch (err) {
+            console.error('Lỗi khi gửi lệnh dừng:', err);
+        }
+    });
 
     sendBtn.addEventListener('click', sendMessage);
     input.addEventListener('keydown', (e) => {
@@ -579,6 +611,15 @@
         a.click();
         document.body.removeChild(a);
         URL.revokeObjectURL(url);
+    }
+
+    function promptRename(sessionId, currentName) {
+        const newName = prompt('Nhập tên mới cho phiên chat:', currentName);
+        if (newName !== null && newName.trim() !== '' && newName.trim() !== currentName) {
+            document.getElementById('renameId').value = sessionId;
+            document.getElementById('renameName').value = newName.trim();
+            document.getElementById('renameForm').submit();
+        }
     }
 </script>
 </body>

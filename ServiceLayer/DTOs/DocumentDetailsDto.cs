@@ -9,6 +9,7 @@ public class DocumentDetailsDto
     public long? FileSizeKB { get; set; }
     public bool IsIndexed { get; set; }
     public DateTime UploadedAt { get; set; }
+    public string? UploaderName { get; set; }
 
     public SubjectDto? Subject { get; set; }
     public List<DocumentChunkDto> Chunks { get; set; } = new();

@@ -10,6 +10,7 @@ public class DocumentDto
     public long? FileSizeKB { get; set; }
     public bool IsIndexed { get; set; }
     public DateTime UploadedAt { get; set; }
+    public string? UploaderName { get; set; }
     
     // Optional reference if needed
     public SubjectDto? Subject { get; set; }
