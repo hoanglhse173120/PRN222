@@ -18,7 +18,7 @@ public class ChatbotDbContext : IdentityDbContext<IdentityUser>
     public DbSet<ExperimentConfig> ExperimentConfigs { get; set; }
     public DbSet<TestQuestion> TestQuestions { get; set; }
     public DbSet<BenchmarkResult> BenchmarkResults { get; set; }
-    public DbSet<TeacherSubject> TeacherSubjects { get; set; }
+    public virtual DbSet<TeacherSubject> TeacherSubjects { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
