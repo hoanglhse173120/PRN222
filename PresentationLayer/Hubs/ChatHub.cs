@@ -11,7 +11,7 @@ namespace PresentationLayer.Hubs;
 /// Nhận tin nhắn từ client, đẩy cho thuật toán RAG xử lý và stream câu trả lời liên tục (chunk) về lại cho người dùng.
 /// Đồng thời xử lý các tác vụ như lưu tin nhắn vào DB, đặt tên session.
 /// </summary>
-[Authorize(Roles = "Admin,Student")]
+[Authorize(Roles = "Admin,Student,Teacher")]
 public class ChatHub : Hub
 {
     private readonly IChatService _chatService;

@@ -3,8 +3,9 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
+using Microsoft.AspNetCore.SignalR;
+using PresentationLayer.Hubs;
 using PresentationLayer.ViewModels.Admin;
-
 using ServiceLayer.Interfaces;
 
 namespace PresentationLayer.Pages.Admin;
@@ -15,15 +16,18 @@ public class AssignSubjectsModel : PageModel
     private readonly UserManager<IdentityUser> _userManager;
     private readonly RoleManager<IdentityRole> _roleManager;
     private readonly ISubjectService _subjectService;
+    private readonly IHubContext<ChatHub> _hubContext;
 
     public AssignSubjectsModel(
         UserManager<IdentityUser> userManager,
         RoleManager<IdentityRole> roleManager,
-        ISubjectService subjectService)
+        ISubjectService subjectService,
+        IHubContext<ChatHub> hubContext)
     {
         _userManager = userManager;
         _roleManager = roleManager;
         _subjectService = subjectService;
+        _hubContext = hubContext;
     }
 
     public AssignSubjectsViewModel Vm { get; set; } = null!;
@@ -67,6 +71,9 @@ public class AssignSubjectsModel : PageModel
             TempData["Error"] = result.ErrorMessage;
             return RedirectToPage(new { userId });
         }
+
+        // Thông báo riêng cho giáo viên đó biết môn học của họ đã thay đổi
+        await _hubContext.Clients.User(userId).SendAsync("SubjectAssigned");
 
         TempData["Success"] = "Cập nhật phân công môn học thành công.";
         return RedirectToPage("Index");

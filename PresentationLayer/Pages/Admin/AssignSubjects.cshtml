@@ -61,7 +61,7 @@
                                        name="selectedSubjectIds" value="@subject.SubjectId"
                                        id="subj_@subject.SubjectId"
                                        @(isChecked ? "checked" : "")
-                                       @(isDisabled ? "disabled" : "") />
+                                       @(isTaken   ? "disabled" : "") />
 
                                 <label class="form-check-label fw-semibold flex-grow-1" for="subj_@subject.SubjectId">
                                     @if (isTaken)
@@ -102,13 +102,14 @@
 
 @section Scripts {
 <script>
+    // Chỉ loại các checkbox bị khoá cứng (môn đã có GV khác)
     const checkboxes = document.querySelectorAll('.subject-checkbox:not([disabled])');
     const warning    = document.getElementById('limitWarning');
     const MAX = 2;
 
     function updateState() {
-        const allChecked = [...document.querySelectorAll('.subject-checkbox')].filter(c => c.checked).length;
-        const limitHit   = allChecked >= MAX;
+        const checkedCount = [...checkboxes].filter(c => c.checked).length;
+        const limitHit     = checkedCount >= MAX;
         warning.classList.toggle('d-none', !limitHit);
         checkboxes.forEach(cb => {
             if (!cb.checked) cb.disabled = limitHit;

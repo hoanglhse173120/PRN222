@@ -3,8 +3,6 @@
 @{
     ViewData["Title"] = "Quản lý Tài liệu";
     var totalDocs = Model.Vm.Documents.Count();
-    var indexedDocs = Model.Vm.Documents.Count(d => d.IsIndexed == true);
-    var pendingDocs = Model.Vm.Documents.Count(d => d.IsIndexed != true);
 }
 
 <div class="doc-page">
@@ -44,7 +42,7 @@
         </div>
     }
 
-    @* ── Stats Cards ── *@
+    @* -- Stats Cards -- *@
     <div class="stats-row mb-4">
         <div class="stat-card total">
             <div class="stat-icon"><i class="bi bi-files"></i></div>
@@ -53,25 +51,11 @@
                 <span class="stat-label">Tổng tài liệu</span>
             </div>
         </div>
-        <div class="stat-card indexed">
-            <div class="stat-icon"><i class="bi bi-check2-circle"></i></div>
-            <div class="stat-content">
-                <span class="stat-number">@indexedDocs</span>
-                <span class="stat-label">Đã Index</span>
-            </div>
-        </div>
-        <div class="stat-card pending">
-            <div class="stat-icon"><i class="bi bi-hourglass-split"></i></div>
-            <div class="stat-content">
-                <span class="stat-number">@pendingDocs</span>
-                <span class="stat-label">Chờ Index</span>
-            </div>
-        </div>
     </div>
 
-    @* ── Filter Bar ── *@
+    @* -- Filter Bar -- *@
     <div class="filter-bar mb-4">
-        <form method="get" class="filter-form">
+        <form method="get" class="filter-form-single">
             <div class="filter-group">
                 <i class="bi bi-journal-bookmark filter-icon"></i>
                 <select name="subjectId" class="filter-select" onchange="this.form.submit()">
@@ -80,15 +64,6 @@
                     {
                         <option value="@s.SubjectID" selected="@(Model.Vm.SelectedSubjectId == s.SubjectID)">@s.SubjectName</option>
                     }
-                </select>
-            </div>
-            <div class="filter-divider"></div>
-            <div class="filter-group">
-                <i class="bi bi-funnel filter-icon"></i>
-                <select name="filter" class="filter-select" onchange="this.form.submit()">
-                    <option value="all" selected="@(Model.Vm.Filter == "all")">Tất cả trạng thái</option>
-                    <option value="indexed" selected="@(Model.Vm.Filter == "indexed")">Đã Index</option>
-                    <option value="pending" selected="@(Model.Vm.Filter == "pending")">Chưa Index</option>
                 </select>
             </div>
         </form>
@@ -116,14 +91,13 @@
                 <thead>
                     <tr>
                         <th style="width:48px">#</th>
-                        <th>Tên file</th>
+                        <th style="max-width:220px">Tên file</th>
                         <th style="width:80px">Loại</th>
                         <th>Môn học</th>
                         <th style="width:100px">Kích thước</th>
                         <th>Người Upload</th>
-                        <th style="width:120px">Trạng thái</th>
                         <th style="width:130px">Ngày upload</th>
-                        @if (User.IsInRole("Teacher") || User.IsInRole("Admin"))
+                        @if (User.IsInRole("Teacher"))
                         {
                             <th style="width:160px">Hành động</th>
                         }
@@ -140,7 +114,7 @@
                         <tr class="doc-row">
                             <td><span class="row-num">@row</span></td>
                             <td>
-                                <a href="@doc.FilePath" target="_blank" class="doc-link">
+                                <a href="@doc.FilePath" target="_blank" class="doc-link" title="@doc.FileName">
                                     <span class="doc-file-icon @GetFileIconClass(doc.FileType)">
                                         <i class="bi @GetFileIcon(doc.FileType)"></i>
                                     </span>
@@ -151,25 +125,14 @@
                             <td><span class="subject-tag">@(doc.Subject?.SubjectName ?? "N/A")</span></td>
                             <td class="text-muted small">@(doc.FileSizeKB.HasValue ? $"{doc.FileSizeKB:N0} KB" : "—")</td>
                             <td><span class="subject-tag" style="background:#F3F4F6;color:#374151;">@(doc.UploaderName)</span></td>
-                            <td>
-                                @if (doc.IsIndexed == true)
-                                {
-                                    <span class="status-badge indexed"><i class="bi bi-check-circle-fill me-1"></i>Đã Index</span>
-                                }
-                                else
-                                {
-                                    <span class="status-badge pending"><i class="bi bi-hourglass me-1"></i>Chờ Index</span>
-                                }
-                            </td>
                             <td class="text-muted small">@doc.UploadedAt.ToString("dd/MM/yyyy HH:mm")</td>
                             <td>
                                 <div class="action-btns">
                                     <a asp-page="Details" asp-route-id="@doc.DocumentID" class="action-btn info" title="Chi tiết">
                                         <i class="bi bi-eye"></i>
                                     </a>
-                                    @if (User.IsInRole("Teacher") || User.IsInRole("Admin"))
+                                    @if (User.IsInRole("Teacher"))
                                     {
-
                                         <form asp-page-handler="Delete" asp-route-id="@doc.DocumentID" method="post" class="d-inline"
                                               onsubmit="return confirm('Xóa tài liệu này?')">
                                             @Html.AntiForgeryToken()
@@ -248,7 +211,8 @@
 /* ── Stats ── */
 .stats-row {
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
+    grid-template-columns: 1fr;
+    max-width: 260px;
     gap: 1rem;
 }
 .stat-card {
@@ -281,6 +245,7 @@
     border: 1px solid rgba(0,0,0,0.05);
 }
 .filter-form { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; }
+.filter-form-single { display: flex; align-items: center; }
 .filter-group {
     display: flex; align-items: center; gap: 0.6rem;
     background: #F8FAFC;
@@ -341,7 +306,7 @@
     font-size: 0.8rem; font-weight: 600;
 }
 
-.doc-link { display: flex; align-items: center; gap: 0.6rem; text-decoration: none; color: var(--text-dark); }
+.doc-link { display: flex; align-items: center; gap: 0.6rem; text-decoration: none; color: var(--text-dark); min-width: 0; }
 .doc-link:hover .doc-name { color: var(--primary); }
 .doc-file-icon {
     width: 32px; height: 32px; border-radius: 8px;
@@ -352,7 +317,11 @@
 .icon-word { background: #EFF6FF; color: #3B82F6; }
 .icon-ppt { background: #FFF7ED; color: #F97316; }
 .icon-default { background: #F1F5F9; color: var(--text-muted); }
-.doc-name { font-size: 0.875rem; font-weight: 500; word-break: break-word; white-space: normal; }
+.doc-name {
+    font-size: 0.875rem; font-weight: 500;
+    white-space: nowrap; overflow: hidden; text-overflow: ellipsis;
+    max-width: 180px;
+}
 
 .file-badge {
     padding: 0.2rem 0.55rem; border-radius: 6px;
@@ -408,3 +377,70 @@
     .filter-divider { width: 100%; height: 1px; margin: 0.5rem 0; }
 }
 </style>
+
+@section Scripts {
+<script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/8.0.7/signalr.min.js"></script>
+<script>
+(function () {
+    // Kết nối tới ChatHub
+    const connection = new signalR.HubConnectionBuilder()
+        .withUrl("/chatHub")
+        .withAutomaticReconnect()
+        .build();
+
+    // Lắng nghe event khi giáo viên upload tài liệu mới
+    connection.on("NewDocumentUploaded", function (doc) {
+        showToast("📄", "Tài liệu mới vừa được upload!", doc.fileName, "#4F46E5", "#7C3AED");
+        setTimeout(() => location.reload(), 1500);
+    });
+
+    // Lắng nghe event khi admin thay đổi môn học (tạo / sửa / xóa)
+    connection.on("SubjectChanged", function (data) {
+        const messages = {
+            created: `Môn học mới "${data.subjectName}" vừa được thêm!`,
+            updated: `Môn học "${data.subjectName}" vừa được cập nhật!`,
+            deleted: "Một môn học vừa bị xóa!"
+        };
+        const msg = messages[data.action] ?? "Danh sách môn học vừa thay đổi!";
+        showToast("📚", "Cập nhật môn học", msg, "#059669", "#047857");
+        setTimeout(() => location.reload(), 1500);
+    });
+
+    // Lắng nghe event khi giáo viên / admin xóa tài liệu
+    connection.on("DocumentDeleted", function (data) {
+        showToast("🗑️", "Tài liệu đã bị xóa!", "Danh sách tài liệu vừa được cập nhật.", "#DC2626", "#B91C1C");
+        setTimeout(() => location.reload(), 1500);
+    });
+
+    connection.start().catch(err => console.warn("SignalR Document: không thể kết nối:", err));
+
+    function showToast(icon, title, subtitle, colorFrom, colorTo) {
+        const toast = document.createElement("div");
+        toast.style.cssText = `
+            position: fixed; bottom: 24px; right: 24px; z-index: 9999;
+            background: linear-gradient(135deg, ${colorFrom}, ${colorTo});
+            color: white; padding: 1rem 1.4rem; border-radius: 16px;
+            box-shadow: 0 8px 32px rgba(0,0,0,0.25);
+            font-family: Inter, sans-serif; font-size: 0.9rem;
+            display: flex; align-items: center; gap: 0.75rem;
+            animation: slideInRight 0.4s ease; max-width: 380px;
+        `;
+        toast.innerHTML = `
+            <span style="font-size:1.4rem">${icon}</span>
+            <div>
+                <div style="font-weight:600">${title}</div>
+                <div style="opacity:0.85;font-size:0.8rem;margin-top:2px">${subtitle}</div>
+            </div>
+        `;
+        document.body.appendChild(toast);
+        setTimeout(() => toast.remove(), 2000);
+    }
+})();
+</script>
+<style>
+@@keyframes slideInRight {
+    from { opacity: 0; transform: translateX(40px); }
+    to   { opacity: 1; transform: translateX(0); }
+}
+</style>
+}

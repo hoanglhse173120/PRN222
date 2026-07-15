@@ -11,9 +11,6 @@
         </a>
         📄 Chi tiết: <span class="text-primary">@Model.DocDetails.FileName</span>
     </h2>
-    <span class="badge @(Model.DocDetails.IsIndexed ? "bg-success" : "bg-warning text-dark") fs-6">
-        @(Model.DocDetails.IsIndexed ? "✅ Đã Index" : "⏳ Chưa Index")
-    </span>
 </div>
 
 @* Thông tin tổng quan *@
@@ -66,15 +63,7 @@
         @if (!Model.DocDetails.Chunks.Any())
         {
             <div class="alert alert-warning m-3">
-                Tài liệu này chưa được Index. 
-                @if (User.IsInRole("Admin"))
-                {
-                    <span>Quay lại danh sách và nhấn nút <strong>✅ Index</strong>.</span>
-                }
-                else
-                {
-                    <span>Vui lòng liên hệ Admin để thực hiện Index và Embed tài liệu.</span>
-                }
+                Tài liệu này không có dữ liệu (file trống hoặc lỗi trong quá trình xử lý).
             </div>
         }
         else

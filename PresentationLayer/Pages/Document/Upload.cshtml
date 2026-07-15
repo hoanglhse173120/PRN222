@@ -179,11 +179,53 @@
         dropzone.classList.add('has-file');
     }
 
-    document.getElementById('uploadForm').addEventListener('submit', () => {
+    document.getElementById('uploadForm')?.addEventListener('submit', () => {
         document.getElementById('submitBtn').innerHTML = '<span class="spinner-border spinner-border-sm me-2"></span>Đang upload...';
         document.getElementById('submitBtn').disabled = true;
     });
     </script>
+
+    @* SignalR: reload khi admin thay đổi phân công môn học cho giáo viên này *@
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/8.0.7/signalr.min.js"></script>
+    <script>
+    (function () {
+        const conn = new signalR.HubConnectionBuilder()
+            .withUrl("/chatHub")
+            .withAutomaticReconnect()
+            .build();
+
+        // Admin vừa thay đổi môn học được phân công cho tôi → reload để cập nhật dropdown
+        conn.on("SubjectAssigned", function () {
+            const toast = document.createElement("div");
+            toast.style.cssText = `
+                position: fixed; bottom: 24px; right: 24px; z-index: 9999;
+                background: linear-gradient(135deg, #7C3AED, #4F46E5);
+                color: white; padding: 1rem 1.4rem; border-radius: 16px;
+                box-shadow: 0 8px 32px rgba(124,58,237,0.4);
+                font-family: Inter, sans-serif; font-size: 0.9rem;
+                display: flex; align-items: center; gap: 0.75rem;
+                animation: slideUp 0.4s ease; max-width: 360px;
+            `;
+            toast.innerHTML = `
+                <span style="font-size:1.4rem">📋</span>
+                <div>
+                    <div style="font-weight:600">Phân công môn học đã thay đổi!</div>
+                    <div style="opacity:0.85;font-size:0.8rem;margin-top:2px">Đang cập nhật danh sách môn học...</div>
+                </div>
+            `;
+            document.body.appendChild(toast);
+            setTimeout(() => location.reload(), 1500);
+        });
+
+        conn.start().catch(err => console.warn("SignalR Upload:", err));
+    })();
+    </script>
+    <style>
+    @@keyframes slideUp {
+        from { opacity: 0; transform: translateY(20px); }
+        to   { opacity: 1; transform: translateY(0); }
+    }
+    </style>
 }
 
 <style>

@@ -2,6 +2,8 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
+using Microsoft.AspNetCore.SignalR;
+using PresentationLayer.Hubs;
 using PresentationLayer.ViewModels;
 using ServiceLayer.Interfaces;
 
@@ -14,24 +16,24 @@ public class IndexModel : PageModel
     private readonly ISubjectService _subjectService;
     private readonly IWebHostEnvironment _env;
     private readonly UserManager<IdentityUser> _userManager;
+    private readonly IHubContext<ChatHub> _hubContext;
 
     public IndexModel(
         IDocumentService documentService, 
         ISubjectService subjectService,
         IWebHostEnvironment env,
-        UserManager<IdentityUser> userManager)
+        UserManager<IdentityUser> userManager,
+        IHubContext<ChatHub> hubContext)
     {
         _documentService = documentService;
         _subjectService = subjectService;
         _env = env;
         _userManager = userManager;
+        _hubContext = hubContext;
     }
 
     [BindProperty(SupportsGet = true)]
     public int? SubjectId { get; set; }
-
-    [BindProperty(SupportsGet = true)]
-    public string Filter { get; set; } = "all";
 
     public DocumentIndexViewModel Vm { get; set; } = null!;
 
@@ -51,26 +53,18 @@ public class IndexModel : PageModel
             documents = documents.Where(d => assignedIds.Contains(d.SubjectID));
         }
 
-        documents = Filter switch
-        {
-            "indexed" => documents.Where(d => d.IsIndexed == true),
-            "pending" => documents.Where(d => d.IsIndexed != true),
-            _ => documents
-        };
-
         Vm = new DocumentIndexViewModel
         {
             Documents = documents,
             Subjects = subjects,
             SelectedSubjectId = SubjectId,
-            Filter = Filter
         };
     }
 
 
     public async Task<IActionResult> OnPostDeleteAsync(int id)
     {
-        if (User.IsInRole("Student"))
+        if (User.IsInRole("Student") || User.IsInRole("Admin"))
         {
             TempData["Error"] = "Bạn không có quyền xoá tài liệu.";
             return RedirectToPage();
@@ -93,6 +87,9 @@ public class IndexModel : PageModel
         }
 
         await _documentService.DeleteAsync(id, _env.WebRootPath);
+
+        await _hubContext.Clients.All.SendAsync("DocumentDeleted", new { documentId = id });
+
         TempData["Success"] = "Đã xoá tài liệu thành công.";
         return RedirectToPage();
     }

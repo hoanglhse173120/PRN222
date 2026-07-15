@@ -1,6 +1,8 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
+using Microsoft.AspNetCore.SignalR;
+using PresentationLayer.Hubs;
 using ServiceLayer.DTOs;
 using ServiceLayer.Interfaces;
 
@@ -10,7 +12,12 @@ namespace PresentationLayer.Pages.Subject;
 public class IndexModel : PageModel
 {
     private readonly ISubjectService _subjectService;
-    public IndexModel(ISubjectService subjectService) => _subjectService = subjectService;
+    private readonly IHubContext<ChatHub> _hubContext;
+    public IndexModel(ISubjectService subjectService, IHubContext<ChatHub> hubContext)
+    {
+        _subjectService = subjectService;
+        _hubContext = hubContext;
+    }
 
     public IEnumerable<SubjectDto> Subjects { get; set; } = Enumerable.Empty<SubjectDto>();
 
@@ -22,6 +29,11 @@ public class IndexModel : PageModel
     public async Task<IActionResult> OnPostDeleteAsync(int id)
     {
         await _subjectService.DeleteAsync(id);
+        await _hubContext.Clients.All.SendAsync("SubjectChanged", new
+        {
+            action    = "deleted",
+            subjectId = id
+        });
         TempData["Success"] = "Đã xóa môn học.";
         return RedirectToPage();
     }

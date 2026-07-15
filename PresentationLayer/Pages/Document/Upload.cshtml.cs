@@ -2,6 +2,8 @@ using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
+using Microsoft.AspNetCore.SignalR;
+using PresentationLayer.Hubs;
 using PresentationLayer.ViewModels;
 using ServiceLayer.Interfaces;
 using ServiceLayer.DTOs;
@@ -15,6 +17,7 @@ public class UploadModel : PageModel
     private readonly ISubjectService _subjectService;
     private readonly UserManager<IdentityUser> _userManager;
     private readonly IWebHostEnvironment _env;
+    private readonly IHubContext<ChatHub> _hubContext;
 
     private static readonly string[] AllowedExtensions = { ".pdf", ".docx", ".pptx", ".doc" };
 
@@ -22,12 +25,14 @@ public class UploadModel : PageModel
         IDocumentService documentService, 
         ISubjectService subjectService, 
         UserManager<IdentityUser> userManager,
-        IWebHostEnvironment env)
+        IWebHostEnvironment env,
+        IHubContext<ChatHub> hubContext)
     {
         _documentService = documentService;
         _subjectService = subjectService;
         _userManager = userManager;
         _env = env;
+        _hubContext = hubContext;
     }
 
     [BindProperty]
@@ -101,6 +106,17 @@ public class UploadModel : PageModel
         );
 
         var chunkCount = await _documentService.IndexDocumentAsync(newDoc.DocumentID, _env.WebRootPath);
+
+        // Thông báo real-time cho tất cả client đang xem trang Document/Index
+        await _hubContext.Clients.All.SendAsync("NewDocumentUploaded", new
+        {
+            documentId  = newDoc.DocumentID,
+            fileName    = newDoc.FileName,
+            fileType    = newDoc.FileType,
+            subjectId   = newDoc.SubjectID,
+            uploaderName = User.Identity?.Name ?? "",
+            uploadedAt  = newDoc.UploadedAt.ToString("dd/MM/yyyy HH:mm")
+        });
 
         TempData["Success"] = $"Upload \"{file.FileName}\" thành công! Đã tự động phân tách thành {chunkCount} đoạn.";
         return RedirectToPage("Index");

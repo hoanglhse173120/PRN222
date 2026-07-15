@@ -1,6 +1,8 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
+using Microsoft.AspNetCore.SignalR;
+using PresentationLayer.Hubs;
 using ServiceLayer.DTOs;
 using ServiceLayer.Interfaces;
 
@@ -10,7 +12,12 @@ namespace PresentationLayer.Pages.Subject;
 public class EditModel : PageModel
 {
     private readonly ISubjectService _subjectService;
-    public EditModel(ISubjectService subjectService) => _subjectService = subjectService;
+    private readonly IHubContext<ChatHub> _hubContext;
+    public EditModel(ISubjectService subjectService, IHubContext<ChatHub> hubContext)
+    {
+        _subjectService = subjectService;
+        _hubContext = hubContext;
+    }
 
     [BindProperty]
     public SubjectDto Input { get; set; } = new();
@@ -27,6 +34,12 @@ public class EditModel : PageModel
     {
         if (!ModelState.IsValid) return Page();
         await _subjectService.UpdateAsync(Input);
+        await _hubContext.Clients.All.SendAsync("SubjectChanged", new
+        {
+            action      = "updated",
+            subjectId   = Input.SubjectID,
+            subjectName = Input.SubjectName
+        });
         TempData["Success"] = "Cập nhật môn học thành công!";
         return RedirectToPage("Index");
     }

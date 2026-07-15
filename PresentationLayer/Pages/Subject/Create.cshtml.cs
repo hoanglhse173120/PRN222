@@ -1,6 +1,8 @@
 using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
+using Microsoft.AspNetCore.SignalR;
+using PresentationLayer.Hubs;
 using ServiceLayer.DTOs;
 using ServiceLayer.Interfaces;
 
@@ -10,7 +12,12 @@ namespace PresentationLayer.Pages.Subject;
 public class CreateModel : PageModel
 {
     private readonly ISubjectService _subjectService;
-    public CreateModel(ISubjectService subjectService) => _subjectService = subjectService;
+    private readonly IHubContext<ChatHub> _hubContext;
+    public CreateModel(ISubjectService subjectService, IHubContext<ChatHub> hubContext)
+    {
+        _subjectService = subjectService;
+        _hubContext = hubContext;
+    }
 
     [BindProperty]
     public SubjectDto Input { get; set; } = new();
@@ -21,6 +28,11 @@ public class CreateModel : PageModel
     {
         if (!ModelState.IsValid) return Page();
         await _subjectService.CreateAsync(Input);
+        await _hubContext.Clients.All.SendAsync("SubjectChanged", new
+        {
+            action      = "created",
+            subjectName = Input.SubjectName
+        });
         TempData["Success"] = $"Đã tạo môn học \"{Input.SubjectName}\" thành công!";
         return RedirectToPage("Index");
     }
