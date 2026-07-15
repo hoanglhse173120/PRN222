@@ -1,0 +1,186 @@
+@page
+@model PresentationLayer.Pages.Admin.DashboardModel
+@{
+    ViewData["Title"] = "Thống kê Hệ thống";
+}
+
+<div class="container-fluid mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <h2><i class="bi bi-graph-up"></i> Bảng điều khiển Thống kê</h2>
+    </div>
+
+    <div class="row mb-4">
+        <div class="col-md-4">
+            <div class="card text-white bg-primary mb-3 shadow-sm">
+                <div class="card-header">Tổng Người dùng</div>
+                <div class="card-body">
+                    <h3 class="card-title">@Model.TotalUsers</h3>
+                    <p class="card-text">Người dùng đã đăng ký vào hệ thống.</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card text-white bg-success mb-3 shadow-sm">
+                <div class="card-header">Tổng Tài liệu RAG</div>
+                <div class="card-body">
+                    <h3 class="card-title">@Model.TotalDocuments</h3>
+                    <p class="card-text">Tài liệu đã được tải lên và index.</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card text-white bg-info mb-3 shadow-sm">
+                <div class="card-header">Tổng Phiên Chat</div>
+                <div class="card-body">
+                    <h3 class="card-title">@Model.TotalChatSessions</h3>
+                    <p class="card-text">Phiên trò chuyện được tạo ra bởi người dùng.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row">
+        <div class="col-md-12">
+            <div class="card shadow-sm">
+                <div class="card-header bg-white d-flex justify-content-between align-items-center">
+                    <h6 class="mb-0"><i class="bi bi-bar-chart-fill me-2"></i> Lượng tin nhắn</h6>
+                    <form method="get" class="d-inline">
+                        <select name="filter" class="form-select form-select-sm" onchange="this.form.submit()">
+                            <option value="day" selected="@(Model.Filter == "day")">Theo ngày (7 ngày qua)</option>
+                            <option value="week" selected="@(Model.Filter == "week")">Theo tuần (4 tuần qua)</option>
+                            <option value="month" selected="@(Model.Filter == "month")">Theo tháng (12 tháng qua)</option>
+                            <option value="year" selected="@(Model.Filter == "year")">Theo năm (5 năm qua)</option>
+                        </select>
+                    </form>
+                </div>
+                <div class="card-body">
+                    <canvas id="chatStatsChart" width="400" height="120"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            var rawData = @Html.Raw(Model.DailyChatStatsJson);
+            
+            var labels = rawData.map(function(item) {
+                return item.Label;
+            });
+            var msgPoints = rawData.map(function(item) {
+                return item.MessageCount;
+            });
+            var sessionPoints = rawData.map(function(item) {
+                return item.SessionCount;
+            });
+            var docPoints = rawData.map(function(item) {
+                return item.DocumentCount;
+            });
+            var userPoints = rawData.map(function(item) {
+                return item.ActiveUserCount;
+            });
+
+            var ctx = document.getElementById('chatStatsChart').getContext('2d');
+
+            var myChart = new Chart(ctx, {
+                type: 'line',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        {
+                            label: 'Số lượng tin nhắn',
+                            data: msgPoints,
+                            borderColor: 'rgba(13, 110, 253, 1)',
+                            backgroundColor: 'rgba(13, 110, 253, 0.1)',
+                            borderWidth: 3,
+                            pointRadius: 4,
+                            pointHoverRadius: 6,
+                            tension: 0.4,
+                            fill: true
+                        },
+                        {
+                            label: 'Số phiên chat',
+                            data: sessionPoints,
+                            borderColor: 'rgba(253, 126, 20, 1)',
+                            backgroundColor: 'rgba(253, 126, 20, 0.1)',
+                            borderWidth: 3,
+                            pointRadius: 4,
+                            pointHoverRadius: 6,
+                            tension: 0.4,
+                            fill: true
+                        },
+                        {
+                            label: 'Số tài liệu (RAG)',
+                            data: docPoints,
+                            borderColor: 'rgba(25, 135, 84, 1)',
+                            backgroundColor: 'rgba(25, 135, 84, 0.1)',
+                            borderWidth: 3,
+                            pointRadius: 4,
+                            pointHoverRadius: 6,
+                            tension: 0.4,
+                            fill: true
+                        },
+                        {
+                            label: 'Người dùng hoạt động',
+                            data: userPoints,
+                            borderColor: 'rgba(111, 66, 193, 1)',
+                            backgroundColor: 'rgba(111, 66, 193, 0.1)',
+                            borderWidth: 3,
+                            pointRadius: 4,
+                            pointHoverRadius: 6,
+                            tension: 0.4,
+                            fill: true
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    plugins: {
+                        legend: {
+                            display: true,
+                            position: 'top'
+                        },
+                        tooltip: {
+                            backgroundColor: 'rgba(0, 0, 0, 0.75)',
+                            padding: 12,
+                            titleFont: { size: 14, family: "'Inter', sans-serif" },
+                            bodyFont: { size: 14, weight: 'bold', family: "'Inter', sans-serif" },
+                            displayColors: true,
+                            cornerRadius: 8
+                        }
+                    },
+                    scales: {
+                        y: {
+                            beginAtZero: true,
+                            grid: {
+                                borderDash: [5, 5],
+                                color: 'rgba(0, 0, 0, 0.05)',
+                                drawBorder: false
+                            },
+                            ticks: {
+                                precision: 0,
+                                font: { size: 12, family: "'Inter', sans-serif" },
+                                color: '#6c757d',
+                                padding: 10
+                            }
+                        },
+                        x: {
+                            grid: {
+                                display: false,
+                                drawBorder: false
+                            },
+                            ticks: {
+                                font: { size: 12, family: "'Inter', sans-serif" },
+                                color: '#6c757d',
+                                padding: 10
+                            }
+                        }
+                    }
+                }
+            });
+        });
+    </script>
+}

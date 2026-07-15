@@ -59,10 +59,15 @@
                         }
                         @if (User.IsInRole("Admin"))
                         {
-                            <li class="nav-item">
-                                <a class="nav-link fw-semibold" style="color: #e11d48;" asp-page="/Admin/Index">
+                            <li class="nav-item dropdown">
+                                <a class="nav-link dropdown-toggle fw-semibold" style="color: #e11d48;" href="#" data-bs-toggle="dropdown">
                                     <i class="bi bi-shield-lock me-1"></i>Quản trị
                                 </a>
+                                <ul class="dropdown-menu glass-card border-0 mt-2 px-2 py-2 shadow" style="border-radius: 16px;">
+                                    <li><a class="dropdown-item rounded" asp-page="/Admin/Index"><i class="bi bi-people-fill me-2"></i>Quản lý Người dùng</a></li>
+                                    <li><hr class="dropdown-divider"></li>
+                                    <li><a class="dropdown-item rounded" asp-page="/Admin/Dashboard"><i class="bi bi-graph-up me-2"></i>Thống kê (Dashboard)</a></li>
+                                </ul>
                             </li>
                         }
                     </ul>
