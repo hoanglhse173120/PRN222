@@ -1,0 +1,71 @@
+@page
+@model PresentationLayer.Pages.Admin.ChunkingConfigModel
+@{
+    ViewData["Title"] = "Cấu hình thuật toán Chunking";
+}
+
+<div class="container-fluid mt-4">
+    <div class="row mb-4">
+        <div class="col-12">
+            <h2 class="text-primary"><i class="bi bi-gear-fill me-2"></i>Cấu hình thuật toán Chunking</h2>
+            <p class="text-muted">Tùy chỉnh cách hệ thống chia nhỏ văn bản trước khi đưa vào mô hình AI (RAG).</p>
+        </div>
+    </div>
+
+    @if (TempData["SuccessMessage"] != null)
+    {
+        <div class="alert alert-success alert-dismissible fade show" role="alert">
+            <i class="bi bi-check-circle-fill me-2"></i>@TempData["SuccessMessage"]
+            <button type="button" class="btn-close" data-bs-dismiss="alert" aria-label="Close"></button>
+        </div>
+    }
+
+    <div class="card shadow-sm border-0">
+        <div class="card-body p-4">
+            <form method="post">
+                <div asp-validation-summary="All" class="text-danger mb-3"></div>
+
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label asp-for="Input.Strategy" class="form-label fw-bold">Chiến lược chia (Strategy)</label>
+                        <select asp-for="Input.Strategy" class="form-select">
+                            <option value="Words">Theo từ (Words)</option>
+                            <option value="Paragraphs">Theo đoạn văn (Paragraphs)</option>
+                            <option value="Characters">Theo ký tự (Characters)</option>
+                        </select>
+                        <div class="form-text">Lựa chọn cách chia đoạn văn bản tối ưu cho tài liệu của bạn.</div>
+                    </div>
+                </div>
+
+                <div class="row mb-3">
+                    <div class="col-md-6">
+                        <label asp-for="Input.MaxSize" class="form-label fw-bold">Kích thước tối đa (Max Size)</label>
+                        <input asp-for="Input.MaxSize" class="form-control" type="number" min="10" max="10000" />
+                        <div class="form-text">Số lượng (từ/ký tự/đoạn) tối đa trong một chunk.</div>
+                        <span asp-validation-for="Input.MaxSize" class="text-danger"></span>
+                    </div>
+                </div>
+
+                <div class="row mb-4">
+                    <div class="col-md-6">
+                        <label asp-for="Input.Overlap" class="form-label fw-bold">Độ chồng chéo (Overlap)</label>
+                        <input asp-for="Input.Overlap" class="form-control" type="number" min="0" max="5000" />
+                        <div class="form-text">Số lượng (từ/ký tự/đoạn) được giữ lại từ chunk liền trước để duy trì ngữ cảnh. Phải nhỏ hơn Kích thước tối đa.</div>
+                        <span asp-validation-for="Input.Overlap" class="text-danger"></span>
+                    </div>
+                </div>
+                
+                <input type="hidden" asp-for="Input.Id" />
+
+                <button type="submit" class="btn btn-primary px-4">
+                    <i class="bi bi-save me-2"></i>Lưu cấu hình
+                </button>
+                <a asp-page="/Admin/Dashboard" class="btn btn-outline-secondary ms-2">Hủy bỏ</a>
+            </form>
+        </div>
+    </div>
+</div>
+
+@section Scripts {
+    <partial name="_ValidationScriptsPartial" />
+}

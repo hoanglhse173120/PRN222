@@ -15,5 +15,5 @@ public interface IDocumentService
     /// <summary>
     /// Extract text từ file → chunk → lưu DocumentChunks → đánh dấu IsIndexed = true
     /// </summary>
-    Task<int> IndexDocumentAsync(int documentId, string webRootPath, int chunkSize = 500, int overlap = 50);
+    Task<int> IndexDocumentAsync(int documentId, string webRootPath);
 }

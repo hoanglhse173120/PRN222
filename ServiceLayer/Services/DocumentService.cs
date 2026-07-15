@@ -194,7 +194,7 @@ public class DocumentService : IDocumentService
     /// 3. Gọi model mã hoá (EmbedService) qua Python API để quy đổi chuỗi text thành Vector.
     /// 4. Lưu lại các Chunk kèm vector (Embedding) tương đối vào Database để sẵn sàng đem so sánh Cosine Similarity.
     /// </summary>
-    public async Task<int> IndexDocumentAsync(int documentId, string webRootPath, int chunkSize = 500, int overlap = 50)
+    public async Task<int> IndexDocumentAsync(int documentId, string webRootPath)
     {
         var doc = await _repo.GetByIdAsync(documentId)
             ?? throw new InvalidOperationException($"Không tìm thấy tài liệu ID={documentId}");
@@ -212,8 +212,8 @@ public class DocumentService : IDocumentService
         if (string.IsNullOrWhiteSpace(rawText))
             throw new InvalidOperationException("Không trích xuất được nội dung từ file.");
 
-        // Bước 2: Chunk
-        var chunks = _chunker.ChunkByWords(rawText, chunkSize, overlap);
+        // Bước 2: Chunk (sử dụng cấu hình từ DB)
+        var chunks = await _chunker.ChunkTextAsync(rawText);
 
         // Bước 3: Lấy Embeddings từ Python API (e5-base)
         var client = _httpClientFactory.CreateClient();

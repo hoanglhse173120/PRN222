@@ -19,6 +19,7 @@ public class ChatbotDbContext : IdentityDbContext<IdentityUser>
     public DbSet<TestQuestion> TestQuestions { get; set; }
     public DbSet<BenchmarkResult> BenchmarkResults { get; set; }
     public virtual DbSet<TeacherSubject> TeacherSubjects { get; set; }
+    public DbSet<ChunkingConfig> ChunkingConfigs { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -37,6 +38,17 @@ public class ChatbotDbContext : IdentityDbContext<IdentityUser>
         modelBuilder.Entity<ExperimentConfig>().HasKey(e => e.ConfigId);
         modelBuilder.Entity<TestQuestion>().HasKey(q => q.QuestionId);
         modelBuilder.Entity<BenchmarkResult>().HasKey(b => b.ResultId);
+        modelBuilder.Entity<ChunkingConfig>().HasKey(c => c.Id);
+
+        // Seed default config
+        modelBuilder.Entity<ChunkingConfig>().HasData(new ChunkingConfig
+        {
+            Id = 1,
+            Strategy = "Words",
+            MaxSize = 500,
+            Overlap = 50,
+            UpdatedAt = new DateTime(2026, 1, 1, 0, 0, 0, DateTimeKind.Local) // Seeded base time
+        });
 
         // TeacherSubject — liên kết giảng viên với môn học (tối đa 2 môn/giảng viên)
         modelBuilder.Entity<TeacherSubject>().HasKey(ts => ts.Id);
