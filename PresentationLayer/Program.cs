@@ -32,8 +32,11 @@ builder.Services.AddDefaultIdentity<IdentityUser>(options => options.SignIn.Requ
 builder.Services.AddAuthentication()
     .AddGoogle(options =>
     {
-        options.ClientId = builder.Configuration["Authentication:Google:ClientId"] ?? "PLACEHOLDER";
-        options.ClientSecret = builder.Configuration["Authentication:Google:ClientSecret"] ?? "PLACEHOLDER";
+        var clientId = builder.Configuration["Authentication:Google:ClientId"];
+        var clientSecret = builder.Configuration["Authentication:Google:ClientSecret"];
+        
+        options.ClientId = string.IsNullOrEmpty(clientId) ? "PLACEHOLDER" : clientId;
+        options.ClientSecret = string.IsNullOrEmpty(clientSecret) ? "PLACEHOLDER" : clientSecret;
     });
 
 builder.Services.AddRazorPages(options =>
