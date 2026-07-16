@@ -19,6 +19,9 @@ public class ChatbotDbContext : IdentityDbContext<IdentityUser>
     public DbSet<TestQuestion> TestQuestions { get; set; }
     public DbSet<BenchmarkResult> BenchmarkResults { get; set; }
     public virtual DbSet<TeacherSubject> TeacherSubjects { get; set; }
+    public DbSet<Package> Packages { get; set; }
+    public DbSet<UserSubscription> UserSubscriptions { get; set; }
+    public DbSet<PaymentTransaction> PaymentTransactions { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
     {
@@ -134,5 +137,31 @@ public class ChatbotDbContext : IdentityDbContext<IdentityUser>
         modelBuilder.Entity<ExperimentConfig>()
             .Property(e => e.ApproachType)
             .HasMaxLength(50);
+
+        // UserSubscription Mappings
+        modelBuilder.Entity<UserSubscription>()
+            .HasOne(us => us.User)
+            .WithMany()
+            .HasForeignKey(us => us.UserId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<UserSubscription>()
+            .HasOne(us => us.Package)
+            .WithMany()
+            .HasForeignKey(us => us.PackageId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        // PaymentTransaction Mappings
+        modelBuilder.Entity<PaymentTransaction>()
+            .HasOne(pt => pt.User)
+            .WithMany()
+            .HasForeignKey(pt => pt.UserId)
+            .OnDelete(DeleteBehavior.Cascade);
+
+        modelBuilder.Entity<PaymentTransaction>()
+            .HasOne(pt => pt.Package)
+            .WithMany()
+            .HasForeignKey(pt => pt.PackageId)
+            .OnDelete(DeleteBehavior.Cascade);
     }
 }

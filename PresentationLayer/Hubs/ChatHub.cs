@@ -3,6 +3,9 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.SignalR;
 using ServiceLayer.Interfaces;
 using System.Collections.Concurrent;
+using Microsoft.EntityFrameworkCore;
+using DataAccessLayer.Context;
+using System;
 
 namespace PresentationLayer.Hubs;
 
@@ -16,12 +19,20 @@ public class ChatHub : Hub
 {
     private readonly IChatService _chatService;
     private readonly IRagService _ragService;
+    private readonly IPaymentService _paymentService;
+    private readonly ChatbotDbContext _context;
     private static readonly ConcurrentDictionary<string, CancellationTokenSource> _activeGenerations = new();
 
-    public ChatHub(IChatService chatService, IRagService ragService)
+    public ChatHub(
+        IChatService chatService, 
+        IRagService ragService,
+        IPaymentService paymentService,
+        ChatbotDbContext context)
     {
         _chatService = chatService;
         _ragService = ragService;
+        _paymentService = paymentService;
+        _context = context;
     }
 
     /// <summary>
@@ -45,6 +56,25 @@ public class ChatHub : Hub
         {
             await Clients.Caller.SendAsync("StreamError", "Không tìm thấy phiên chat.");
             return;
+        }
+
+        // Kiểm tra giới hạn câu hỏi hàng ngày đối với Student
+        if (Context.User != null && Context.User.IsInRole("Student"))
+        {
+            var activeSub = await _paymentService.GetActiveSubscriptionAsync(userId);
+            int maxQuestions = activeSub?.Package.MaxQuestionsPerDay ?? 5;
+
+            var today = DateTime.Today;
+            var sentToday = await _context.ChatMessages
+                .CountAsync(m => m.Session.UserId == userId 
+                                 && m.Role == "user" 
+                                 && m.Timestamp >= today);
+
+            if (sentToday >= maxQuestions)
+            {
+                await Clients.Caller.SendAsync("StreamError", $"Bạn đã đạt giới hạn tối đa {maxQuestions} câu hỏi/ngày đối với gói hiện tại. Vui lòng nâng cấp tài khoản để tiếp tục hỏi đáp.");
+                return;
+            }
         }
 
         bool isFirstMessage = sessionBefore.ChatMessages.Count == 0;
