@@ -59,6 +59,8 @@ builder.Services.AddScoped<ITextExtractorService, TextExtractorService>();
 builder.Services.AddScoped<IChunkingService, ChunkingService>();
 builder.Services.AddScoped<IRagService, RagService>();
 builder.Services.AddScoped<IStatisticService, StatisticService>();
+builder.Services.AddScoped<IPackageService, PackageService>();
+builder.Services.AddScoped<IPaymentService, PaymentService>();
 
 var app = builder.Build();
 
@@ -68,6 +70,8 @@ using (var scope = app.Services.CreateScope())
     try
     {
         await IdentitySeeder.SeedRolesAndUsersAsync(services);
+        var db = services.GetRequiredService<DataAccessLayer.Context.ChatbotDbContext>();
+        await PresentationLayer.Seeders.PackageSeeder.SeedAsync(db);
     }
     catch (Exception ex)
     {

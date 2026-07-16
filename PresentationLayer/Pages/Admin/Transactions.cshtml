@@ -1,0 +1,81 @@
+@page
+@model PresentationLayer.Pages.Admin.TransactionsModel
+@{
+    ViewData["Title"] = "Quản lý giao dịch nâng cấp";
+}
+
+<div class="container py-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h1 class="h2 fw-bold text-dark mb-1">Lịch sử giao dịch</h1>
+            <p class="text-secondary mb-0">Danh sách toàn bộ các yêu cầu nâng cấp gói cước hệ thống.</p>
+        </div>
+    </div>
+
+    <div class="card border-0 rounded-4 shadow-sm overflow-hidden" style="background: rgba(255, 255, 255, 0.85); backdrop-filter: blur(10px);">
+        <div class="table-responsive">
+            <table class="table align-middle mb-0" style="min-width: 900px;">
+                <thead class="table-light text-uppercase fs-7 text-secondary">
+                    <tr>
+                        <th class="px-4 py-3">Người dùng</th>
+                        <th class="py-3">Gói cước</th>
+                        <th class="py-3 text-end">Số tiền</th>
+                        <th class="py-3 text-center">Ngày giao dịch</th>
+                        <th class="py-3">Mã tham chiếu (TxnRef)</th>
+                        <th class="py-3 text-center px-4">Trạng thái</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    @if (Model.Transactions.Count == 0)
+                    {
+                        <tr>
+                            <td colspan="6" class="text-center py-5 text-secondary">
+                                Chưa có giao dịch nào được ghi nhận.
+                            </td>
+                        </tr>
+                    }
+                    else
+                    {
+                        @foreach (var txn in Model.Transactions)
+                        {
+                            <tr>
+                                <td class="px-4 py-3">
+                                    <div class="fw-bold text-dark">@txn.User.Email</div>
+                                    <div class="text-secondary small">ID: @txn.UserId</div>
+                                </td>
+                                <td class="py-3">
+                                    <span class="badge bg-primary-subtle text-primary rounded-pill px-3 py-2 fw-medium">
+                                        @txn.Package.PackageName
+                                    </span>
+                                </td>
+                                <td class="py-3 text-end fw-bold text-dark">
+                                    @txn.Amount.ToString("N0") đ
+                                </td>
+                                <td class="py-3 text-center text-secondary small">
+                                    @txn.TransactionDate.ToString("dd/MM/yyyy HH:mm")
+                                </td>
+                                <td class="py-3 font-monospace small">
+                                    @txn.TransactionReference
+                                </td>
+                                <td class="py-3 text-center px-4">
+                                    @if (txn.Status == "Success")
+                                    {
+                                        <span class="badge bg-success rounded-pill px-3 py-2 fw-bold" style="font-size: 0.75rem;">Thành công</span>
+                                    }
+                                    else if (txn.Status == "Pending")
+                                    {
+                                        <span class="badge bg-warning text-dark rounded-pill px-3 py-2 fw-bold" style="font-size: 0.75rem;">Đang xử lý</span>
+                                    }
+                                    else
+                                    {
+                                        <span class="badge bg-danger rounded-pill px-3 py-2 fw-bold" style="font-size: 0.75rem;">Thất bại</span>
+                                    }
+                                </td>
+                            </tr>
+                        }
+                    }
+                </tbody>
+            </table>
+        </div>
+    </div>
+</div>

@@ -1,0 +1,81 @@
+@page
+@model PresentationLayer.Pages.Pricing.CheckoutModel
+@{
+    ViewData["Title"] = "Thanh toán đơn hàng";
+}
+
+<div class="container py-5" style="max-width: 800px;">
+    <div class="mb-4">
+        <a asp-page="/Pricing/Index" class="btn btn-link text-decoration-none text-secondary px-0">
+            ← Quay lại bảng giá
+        </a>
+    </div>
+
+    <div class="row g-4">
+        <!-- Order details -->
+        <div class="col-md-7">
+            <div class="card border-0 rounded-4 shadow-sm h-100 p-4" style="background: rgba(255, 255, 255, 0.75); backdrop-filter: blur(10px);">
+                <h4 class="fw-bold mb-4">Chi tiết đơn hàng</h4>
+
+                <div class="d-flex justify-content-between align-items-center mb-3 pb-3 border-bottom">
+                    <div>
+                        <h6 class="fw-bold mb-1">Gói cước</h6>
+                        <span class="text-secondary small">@Model.Package.PackageName</span>
+                    </div>
+                    <span class="fw-bold">@Model.Package.Price.ToString("N0") đ</span>
+                </div>
+
+                <div class="d-flex justify-content-between align-items-center mb-4">
+                    <span class="text-secondary">Thời hạn sử dụng</span>
+                    <span class="fw-medium">@Model.Package.DurationInDays ngày</span>
+                </div>
+
+                <div class="d-flex justify-content-between align-items-center mb-4 fs-5 border-top pt-3">
+                    <span class="fw-bold">Tổng thanh toán</span>
+                    <span class="fw-bold text-primary">@Model.Package.Price.ToString("N0") đ</span>
+                </div>
+
+                <form method="post">
+                    @if (!ViewData.ModelState.IsValid)
+                    {
+                        <div class="alert alert-danger rounded-3 p-3 mb-3 small" asp-validation-summary="All"></div>
+                    }
+                    <button type="submit" class="btn btn-primary rounded-pill py-3 w-100 fw-bold shadow-sm d-flex align-items-center justify-content-center gap-2">
+                        💳 Thanh toán qua VNPAY
+                    </button>
+                </form>
+            </div>
+        </div>
+
+        <!-- Sandbox Test Cards details -->
+        <div class="col-md-5">
+            <div class="card border-0 rounded-4 shadow-sm h-100 p-4 text-white" style="background: linear-gradient(135deg, #1e293b, #0f172a);">
+                <h5 class="fw-bold text-warning mb-3">Thẻ Test VNPAY Sandbox</h5>
+                <p class="small text-secondary-light mb-4">
+                    Sử dụng các thông tin thẻ test dưới đây để giả lập thanh toán thành công trong cổng Sandbox.
+                </p>
+
+                <div class="mb-3">
+                    <label class="small text-secondary-light d-block mb-1">Ngân hàng phát hành</label>
+                    <span class="fw-semibold">NCB</span>
+                </div>
+
+                <div class="mb-3">
+                    <label class="small text-secondary-light d-block mb-1">Số thẻ test</label>
+                    <code class="text-warning fw-bold fs-6">9704198526191432198</code>
+                </div>
+
+                <div class="mb-0">
+                    <label class="small text-secondary-light d-block mb-1">Tên chủ thẻ</label>
+                    <span class="fw-semibold">NGUYEN VAN A</span>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .text-secondary-light {
+        color: #94a3b8;
+    }
+</style>

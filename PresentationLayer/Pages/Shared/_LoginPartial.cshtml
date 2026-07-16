@@ -1,14 +1,18 @@
 @using Microsoft.AspNetCore.Identity
 @inject SignInManager<IdentityUser> SignInManager
 @inject UserManager<IdentityUser> UserManager
+@inject ServiceLayer.Interfaces.IPaymentService PaymentService
 
 <ul class="navbar-nav align-items-center gap-2">
 @if (SignInManager.IsSignedIn(User))
 {
-    var userPrefix = User.IsInRole("Admin") ? "🛡️" : User.IsInRole("Teacher") ? "👨‍🏫" : "👤";
+    var userId = UserManager.GetUserId(User);
+    var activeSub = !string.IsNullOrEmpty(userId) ? await PaymentService.GetActiveSubscriptionAsync(userId) : null;
+    var userPrefix = User.IsInRole("Admin") ? "🛡️" : User.IsInRole("Teacher") ? "👨‍🏫" : (activeSub != null ? "👑" : "👤");
+    var displayName = User.Identity?.Name + (activeSub != null ? " (Standard)" : "");
     <li class="nav-item">
         <a class="nav-link text-dark fw-medium px-3" style="background-color: var(--background-light); border-radius: 20px;" asp-area="Identity" asp-page="/Account/Manage/Index" title="Manage">
-            @userPrefix @User.Identity?.Name
+            @userPrefix @displayName
         </a>
     </li>
     <li class="nav-item">

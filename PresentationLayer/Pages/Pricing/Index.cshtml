@@ -1,0 +1,157 @@
+@page
+@model PresentationLayer.Pages.Pricing.IndexModel
+@{
+    ViewData["Title"] = "Bảng giá nâng cấp";
+}
+
+<div class="container py-5">
+    <div class="text-center mb-5">
+        <h1 class="display-4 fw-bold text-gradient mb-3">Nâng cấp tài khoản Học tập</h1>
+        <p class="lead text-secondary mx-auto" style="max-width: 600px;">
+            Mở khóa giới hạn tin nhắn hàng ngày để tối ưu hiệu quả ôn tập cùng Trợ lý ảo AI.
+        </p>
+    </div>
+
+    @if (Model.ActiveSubscription != null)
+    {
+        <div class="alert alert-success d-flex align-items-center gap-3 mx-auto mb-5 rounded-4 shadow-sm border-0 p-4" style="max-width: 750px; background: rgba(25, 135, 84, 0.1); border-left: 5px solid #198754 !important;">
+            <div class="fs-1">👑</div>
+            <div>
+                <h4 class="alert-heading fw-bold mb-1 text-success">Bạn đang sử dụng @Model.ActiveSubscription.Package.PackageName</h4>
+                <p class="mb-0 text-dark">
+                    Hạn sử dụng gói của bạn kéo dài đến ngày <strong>@Model.ActiveSubscription.EndDate.ToString("dd/MM/yyyy HH:mm")</strong>. 
+                    Bạn có tối đa <strong>@Model.ActiveSubscription.Package.MaxQuestionsPerDay câu hỏi/ngày</strong>.
+                </p>
+            </div>
+        </div>
+    }
+
+    <div class="row row-cols-1 row-cols-md-2 g-4 justify-content-center mx-auto" style="max-width: 900px;">
+        <!-- Free Plan -->
+        <div class="col">
+            <div class="card h-100 border-0 rounded-4 shadow-sm pricing-card">
+                <div class="card-body p-5 d-flex flex-col flex-column">
+                    <div class="mb-4">
+                        <span class="badge bg-secondary-subtle text-secondary rounded-pill px-3 py-2 fw-medium mb-3">Mặc định</span>
+                        <h3 class="fw-bold mb-2">Gói Miễn Phí (Free)</h3>
+                        <p class="text-secondary mb-0">Dành cho trải nghiệm chatbot cơ bản.</p>
+                    </div>
+
+                    <div class="my-4">
+                        <span class="display-5 fw-bold">0đ</span>
+                        <span class="text-secondary">/ vĩnh viễn</span>
+                    </div>
+
+                    <ul class="list-unstyled d-flex flex-column gap-3 mb-5 flex-grow-1">
+                        <li class="d-flex align-items-center gap-2">
+                            <span class="text-success">✔</span>
+                            <span>Hỏi đáp AI Chatbot</span>
+                        </li>
+                        <li class="d-flex align-items-center gap-2">
+                            <span class="text-success">✔</span>
+                            <span>Giới hạn <strong>5 câu hỏi</strong> / ngày</span>
+                        </li>
+                        <li class="d-flex align-items-center gap-2">
+                            <span class="text-success">✔</span>
+                            <span>Tra cứu tài liệu RAG</span>
+                        </li>
+                        <li class="d-flex align-items-center gap-2 text-secondary">
+                            <span>❌</span>
+                            <span class="text-decoration-line-through">Phản hồi ưu tiên tốc độ cao</span>
+                        </li>
+                    </ul>
+
+                    <button class="btn btn-outline-secondary rounded-pill py-3 w-100 fw-semibold mt-auto" disabled>Gói hiện tại</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Premium Standard Plan -->
+        <div class="col">
+            <div class="card h-100 border-0 rounded-4 shadow-lg pricing-card premium-card border-gradient">
+                <div class="card-body p-5 d-flex flex-col flex-column relative" style="overflow: hidden;">
+                    <div class="popular-tag text-white fw-bold">PHỔ BIẾN</div>
+                    
+                    <div class="mb-4">
+                        <span class="badge bg-primary rounded-pill px-3 py-2 fw-medium mb-3">Được khuyên dùng</span>
+                        <h3 class="fw-bold mb-2 text-primary">Gói Học Tập (Standard)</h3>
+                        <p class="text-secondary mb-0">Tăng hiệu suất ôn tập không giới hạn gián đoạn.</p>
+                    </div>
+
+                    <div class="my-4">
+                        <span class="display-5 fw-bold text-primary">50.000đ</span>
+                        <span class="text-secondary">/ 30 ngày</span>
+                    </div>
+
+                    <ul class="list-unstyled d-flex flex-column gap-3 mb-5 flex-grow-1">
+                        <li class="d-flex align-items-center gap-2">
+                            <span class="text-success">✔</span>
+                            <span>Hỏi đáp AI Chatbot</span>
+                        </li>
+                        <li class="d-flex align-items-center gap-2">
+                            <span class="text-success">✔</span>
+                            <span>Giới hạn lên đến <strong>15 câu hỏi</strong> / ngày</span>
+                        </li>
+                        <li class="d-flex align-items-center gap-2">
+                            <span class="text-success">✔</span>
+                            <span>Tra cứu tài liệu RAG</span>
+                        </li>
+                        <li class="d-flex align-items-center gap-2">
+                            <span class="text-success">✔</span>
+                            <span>Hỗ trợ phản hồi ưu tiên tốc độ cao</span>
+                        </li>
+                    </ul>
+
+                    @if (User.IsInRole("Student"))
+                    {
+                        @if (Model.ActiveSubscription != null && Model.ActiveSubscription.Package.PackageName.Contains("Standard"))
+                        {
+                            <a asp-page="/Pricing/Checkout" asp-route-packageId="1" class="btn btn-primary rounded-pill py-3 w-100 fw-semibold shadow-sm mt-auto">Gia hạn gói</a>
+                        }
+                        else
+                        {
+                            <a asp-page="/Pricing/Checkout" asp-route-packageId="1" class="btn btn-primary rounded-pill py-3 w-100 fw-semibold shadow-sm mt-auto">Nâng cấp ngay</a>
+                        }
+                    }
+                    else
+                    {
+                        <button class="btn btn-outline-secondary rounded-pill py-3 w-100 fw-semibold mt-auto" disabled title="Chỉ học sinh mới được nâng cấp">Chỉ dành cho Student</button>
+                    }
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+    .text-gradient {
+        background: linear-gradient(135deg, var(--primary), #4361ee);
+        -webkit-background-clip: text;
+        -webkit-text-fill-color: transparent;
+    }
+    .pricing-card {
+        transition: transform 0.3s ease, box-shadow 0.3s ease;
+        background: rgba(255, 255, 255, 0.7);
+        backdrop-filter: blur(10px);
+        border: 1px solid rgba(0, 0, 0, 0.05) !important;
+    }
+    .pricing-card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 15px 30px rgba(0, 0, 0, 0.08) !important;
+    }
+    .premium-card {
+        background: linear-gradient(145deg, #ffffff, #f4f6ff);
+        border: 2px solid var(--primary) !important;
+    }
+    .popular-tag {
+        position: absolute;
+        top: 20px;
+        right: -35px;
+        background: #ff5e62;
+        padding: 5px 35px;
+        transform: rotate(45deg);
+        font-size: 0.75rem;
+        letter-spacing: 1px;
+        box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+</style>
