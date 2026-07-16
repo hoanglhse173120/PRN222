@@ -79,7 +79,7 @@ public class ChunkingService : IChunkingService
 
     private List<string> ChunkByParagraphs(string text, int maxSize, int overlap)
     {
-        var paragraphs = text.Split(new[] { "\r\n\r\n", "\n\n" }, StringSplitOptions.RemoveEmptyEntries)
+        var paragraphs = text.Split(new[] { "\r\n", "\n" }, StringSplitOptions.RemoveEmptyEntries)
                              .Select(p => p.Trim())
                              .Where(p => !string.IsNullOrEmpty(p))
                              .ToArray();
@@ -91,7 +91,7 @@ public class ChunkingService : IChunkingService
         while (i < paragraphs.Length)
         {
             var chunkParagraphs = paragraphs.Skip(i).Take(maxSize).ToArray();
-            var chunkText = string.Join("\n\n", chunkParagraphs).Trim();
+            var chunkText = string.Join("\n", chunkParagraphs).Trim();
 
             if (!string.IsNullOrWhiteSpace(chunkText))
                 chunks.Add(chunkText);
