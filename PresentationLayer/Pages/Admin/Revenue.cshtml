@@ -50,4 +50,168 @@
             </div>
         </div>
     </div>
+
+    <div class="row mb-4">
+        <div class="col-md-12">
+            <div class="card shadow-sm border-0 rounded-4">
+                <div class="card-header bg-white d-flex justify-content-between align-items-center py-3">
+                    <h6 class="mb-0 fw-bold text-dark"><i class="bi bi-bar-chart-fill text-primary me-2"></i> Biểu đồ Doanh Thu & Gói Đăng Ký</h6>
+                    <form method="get" class="d-inline">
+                        <select name="filter" class="form-select form-select-sm border-secondary-subtle shadow-sm" onchange="this.form.submit()" style="border-radius: 8px;">
+                            <option value="day" selected="@(Model.Filter == "day")">Theo ngày (7 ngày qua)</option>
+                            <option value="week" selected="@(Model.Filter == "week")">Theo tuần (4 tuần qua)</option>
+                            <option value="month" selected="@(Model.Filter == "month")">Theo tháng (12 tháng qua)</option>
+                            <option value="year" selected="@(Model.Filter == "year")">Theo năm (5 năm qua)</option>
+                        </select>
+                    </form>
+                </div>
+                <div class="card-body p-4">
+                    <canvas id="revenueChart" width="400" height="120"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
 </div>
+
+@section Scripts {
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <script>
+        document.addEventListener("DOMContentLoaded", function () {
+            var rawData = @Html.Raw(Model.RevenueStatsJson);
+            
+            var labels = rawData.map(function(item) {
+                return item.Label;
+            });
+            var revenuePoints = rawData.map(function(item) {
+                return item.Revenue;
+            });
+            var subPoints = rawData.map(function(item) {
+                return item.SubscriptionCount;
+            });
+
+            var ctx = document.getElementById('revenueChart').getContext('2d');
+
+            var myChart = new Chart(ctx, {
+                type: 'bar',
+                data: {
+                    labels: labels,
+                    datasets: [
+                        {
+                            label: 'Doanh thu (VNĐ)',
+                            data: revenuePoints,
+                            backgroundColor: 'rgba(245, 158, 11, 0.85)', // Warning color
+                            borderColor: 'rgba(217, 119, 6, 1)',
+                            borderWidth: 1,
+                            borderRadius: 6,
+                            yAxisID: 'y'
+                        },
+                        {
+                            label: 'Số gói đăng ký mới',
+                            data: subPoints,
+                            backgroundColor: 'rgba(239, 68, 68, 0.85)', // Danger color
+                            borderColor: 'rgba(185, 28, 28, 1)',
+                            borderWidth: 1,
+                            borderRadius: 6,
+                            yAxisID: 'y1'
+                        }
+                    ]
+                },
+                options: {
+                    responsive: true,
+                    interaction: {
+                        mode: 'index',
+                        intersect: false,
+                    },
+                    plugins: {
+                        legend: {
+                            display: true,
+                            position: 'top',
+                            labels: {
+                                font: { family: "'Inter', sans-serif", size: 13 }
+                            }
+                        },
+                        tooltip: {
+                            backgroundColor: 'rgba(0, 0, 0, 0.8)',
+                            padding: 12,
+                            titleFont: { size: 14, family: "'Inter', sans-serif" },
+                            bodyFont: { size: 14, weight: '500', family: "'Inter', sans-serif" },
+                            cornerRadius: 8,
+                            callbacks: {
+                                label: function(context) {
+                                    let label = context.dataset.label || '';
+                                    if (label) {
+                                        label += ': ';
+                                    }
+                                    if (context.datasetIndex === 0) {
+                                        label += new Intl.NumberFormat('vi-VN').format(context.parsed.y) + ' đ';
+                                    } else {
+                                        label += context.parsed.y;
+                                    }
+                                    return label;
+                                }
+                            }
+                        }
+                    },
+                    scales: {
+                        x: {
+                            grid: {
+                                display: false,
+                                drawBorder: false
+                            },
+                            ticks: {
+                                font: { size: 12, family: "'Inter', sans-serif" },
+                                color: '#6c757d',
+                                padding: 10
+                            }
+                        },
+                        y: {
+                            type: 'linear',
+                            display: true,
+                            position: 'left',
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: 'Doanh thu (VNĐ)',
+                                font: { family: "'Inter', sans-serif", size: 12 }
+                            },
+                            grid: {
+                                borderDash: [5, 5],
+                                color: 'rgba(0, 0, 0, 0.05)',
+                                drawBorder: false
+                            },
+                            ticks: {
+                                font: { size: 12, family: "'Inter', sans-serif" },
+                                color: '#6c757d',
+                                callback: function(value) {
+                                    if (value >= 1000000) return (value / 1000000) + 'M';
+                                    if (value >= 1000) return (value / 1000) + 'K';
+                                    return value;
+                                }
+                            }
+                        },
+                        y1: {
+                            type: 'linear',
+                            display: true,
+                            position: 'right',
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: 'Số gói',
+                                font: { family: "'Inter', sans-serif", size: 12 }
+                            },
+                            grid: {
+                                drawOnChartArea: false, // only draw grid lines for one axis to keep it clean
+                                drawBorder: false
+                            },
+                            ticks: {
+                                precision: 0,
+                                font: { size: 12, family: "'Inter', sans-serif" },
+                                color: '#6c757d'
+                            }
+                        }
+                    }
+                }
+            });
+        });
+    </script>
+}

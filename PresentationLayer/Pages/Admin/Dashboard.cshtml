@@ -179,7 +179,7 @@
             var ctx = document.getElementById('chatStatsChart').getContext('2d');
 
             var myChart = new Chart(ctx, {
-                type: 'line',
+                type: 'bar',
                 data: {
                     labels: labels,
                     datasets: [
@@ -187,45 +187,33 @@
                             label: 'Số lượng tin nhắn',
                             data: msgPoints,
                             borderColor: 'rgba(13, 110, 253, 1)',
-                            backgroundColor: 'rgba(13, 110, 253, 0.1)',
-                            borderWidth: 3,
-                            pointRadius: 4,
-                            pointHoverRadius: 6,
-                            tension: 0.4,
-                            fill: true
+                            backgroundColor: 'rgba(13, 110, 253, 0.85)',
+                            borderWidth: 1,
+                            borderRadius: 6
                         },
                         {
                             label: 'Số phiên chat',
                             data: sessionPoints,
                             borderColor: 'rgba(253, 126, 20, 1)',
-                            backgroundColor: 'rgba(253, 126, 20, 0.1)',
-                            borderWidth: 3,
-                            pointRadius: 4,
-                            pointHoverRadius: 6,
-                            tension: 0.4,
-                            fill: true
+                            backgroundColor: 'rgba(253, 126, 20, 0.85)',
+                            borderWidth: 1,
+                            borderRadius: 6
                         },
                         {
                             label: 'Số tài liệu (RAG)',
                             data: docPoints,
                             borderColor: 'rgba(25, 135, 84, 1)',
-                            backgroundColor: 'rgba(25, 135, 84, 0.1)',
-                            borderWidth: 3,
-                            pointRadius: 4,
-                            pointHoverRadius: 6,
-                            tension: 0.4,
-                            fill: true
+                            backgroundColor: 'rgba(25, 135, 84, 0.85)',
+                            borderWidth: 1,
+                            borderRadius: 6
                         },
                         {
                             label: 'Người dùng hoạt động',
                             data: userPoints,
                             borderColor: 'rgba(111, 66, 193, 1)',
-                            backgroundColor: 'rgba(111, 66, 193, 0.1)',
-                            borderWidth: 3,
-                            pointRadius: 4,
-                            pointHoverRadius: 6,
-                            tension: 0.4,
-                            fill: true
+                            backgroundColor: 'rgba(111, 66, 193, 0.85)',
+                            borderWidth: 1,
+                            borderRadius: 6
                         }
                     ]
                 },

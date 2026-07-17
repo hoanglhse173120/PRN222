@@ -23,10 +23,18 @@ public class RevenueModel : PageModel
     public decimal TotalRevenue { get; set; }
     public int ActiveSubscriptions { get; set; }
 
+    [BindProperty(SupportsGet = true)]
+    public string Filter { get; set; } = "day";
+
+    public string RevenueStatsJson { get; set; } = "[]";
+
     public async Task OnGetAsync()
     {
         TotalRevenue = await _statisticService.GetTotalRevenueAsync();
         ActiveSubscriptions = await _statisticService.GetActiveSubscriptionsAsync();
+        
+        var stats = await _statisticService.GetRevenueStatsAsync(Filter);
+        RevenueStatsJson = System.Text.Json.JsonSerializer.Serialize(stats);
     }
 
     public async Task<IActionResult> OnGetExportCsvAsync()
