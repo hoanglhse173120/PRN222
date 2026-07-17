@@ -20,52 +20,145 @@
         </div>
     }
 
-    <div class="card shadow-sm border-0">
-        <div class="card-body p-4">
-            <form method="post">
-                <div asp-validation-summary="All" class="text-danger mb-3"></div>
+    <div class="row">
+        <div class="col-md-7">
+            <div class="card shadow-sm border-0 mb-4">
+                <div class="card-body p-4">
+                    <form method="post">
+                        <div asp-validation-summary="All" class="text-danger mb-3"></div>
 
-                <div class="row mb-3">
-                    <div class="col-md-6">
-                        <label asp-for="Input.Strategy" class="form-label fw-bold">Chiến lược chia (Strategy)</label>
-                        <select asp-for="Input.Strategy" class="form-select">
-                            <option value="Words">Theo từ (Words)</option>
-                            <option value="Paragraphs">Theo đoạn văn (Paragraphs)</option>
-                            <option value="Characters">Theo ký tự (Characters)</option>
-                        </select>
-                        <div class="form-text">Lựa chọn cách chia đoạn văn bản tối ưu cho tài liệu của bạn.</div>
+                        <div class="mb-3">
+                            <label asp-for="Input.Strategy" class="form-label fw-bold">Chiến lược chia (Strategy)</label>
+                            <select asp-for="Input.Strategy" class="form-select">
+                                <option value="Words">Theo từ (Words)</option>
+                                <option value="Paragraphs">Theo đoạn văn (Paragraphs)</option>
+                                <option value="Characters">Theo ký tự (Characters)</option>
+                            </select>
+                            <div class="form-text">Lựa chọn cách chia đoạn văn bản tối ưu cho tài liệu của bạn.</div>
+                        </div>
+
+                        <div class="mb-3">
+                            <label asp-for="Input.MaxSize" class="form-label fw-bold">Kích thước tối đa (Max Size)</label>
+                            <input asp-for="Input.MaxSize" class="form-control" type="number" min="1" max="10000" />
+                            <div class="form-text" id="maxSizeDesc">Số lượng (từ/ký tự/đoạn) tối đa trong một chunk.</div>
+                            <span asp-validation-for="Input.MaxSize" class="text-danger"></span>
+                        </div>
+
+                        <div class="mb-4">
+                            <label asp-for="Input.Overlap" class="form-label fw-bold">Độ chồng chéo (Overlap)</label>
+                            <input asp-for="Input.Overlap" class="form-control" type="number" min="0" max="5000" />
+                            <div class="form-text" id="overlapDesc">Số lượng (từ/ký tự/đoạn) được giữ lại từ chunk liền trước để duy trì ngữ cảnh. Phải nhỏ hơn Kích thước tối đa.</div>
+                            <span asp-validation-for="Input.Overlap" class="text-danger"></span>
+                        </div>
+                        
+                        <input type="hidden" asp-for="Input.Id" />
+
+                        <button type="submit" class="btn btn-primary px-4">
+                            <i class="bi bi-save me-2"></i>Lưu cấu hình
+                        </button>
+                        <a asp-page="/Admin/Dashboard" class="btn btn-outline-secondary ms-2">Hủy bỏ</a>
+                    </form>
+                </div>
+            </div>
+        </div>
+
+        <div class="col-md-5">
+            <div id="strategyInfoBox" class="card shadow-sm border-0 bg-light" style="display: none;">
+                <div class="card-body p-4">
+                    <h5 class="card-title text-primary fw-bold border-bottom pb-2 mb-3" id="infoTitle">
+                        <i class="bi bi-lightbulb-fill text-warning me-2"></i><span>Hướng dẫn</span>
+                    </h5>
+                    <div id="infoContent" class="text-dark" style="font-size: 0.95rem;">
+                        <!-- Content will be injected by JS -->
                     </div>
                 </div>
-
-                <div class="row mb-3">
-                    <div class="col-md-6">
-                        <label asp-for="Input.MaxSize" class="form-label fw-bold">Kích thước tối đa (Max Size)</label>
-                        <input asp-for="Input.MaxSize" class="form-control" type="number" min="10" max="10000" />
-                        <div class="form-text">Số lượng (từ/ký tự/đoạn) tối đa trong một chunk.</div>
-                        <span asp-validation-for="Input.MaxSize" class="text-danger"></span>
-                    </div>
-                </div>
-
-                <div class="row mb-4">
-                    <div class="col-md-6">
-                        <label asp-for="Input.Overlap" class="form-label fw-bold">Độ chồng chéo (Overlap)</label>
-                        <input asp-for="Input.Overlap" class="form-control" type="number" min="0" max="5000" />
-                        <div class="form-text">Số lượng (từ/ký tự/đoạn) được giữ lại từ chunk liền trước để duy trì ngữ cảnh. Phải nhỏ hơn Kích thước tối đa.</div>
-                        <span asp-validation-for="Input.Overlap" class="text-danger"></span>
-                    </div>
-                </div>
-                
-                <input type="hidden" asp-for="Input.Id" />
-
-                <button type="submit" class="btn btn-primary px-4">
-                    <i class="bi bi-save me-2"></i>Lưu cấu hình
-                </button>
-                <a asp-page="/Admin/Dashboard" class="btn btn-outline-secondary ms-2">Hủy bỏ</a>
-            </form>
+            </div>
         </div>
     </div>
 </div>
 
 @section Scripts {
     <partial name="_ValidationScriptsPartial" />
+    <script>
+        const strategyInfo = {
+            "Words": {
+                title: "Cơ chế theo từ (Words)",
+                maxSizeDesc: "Số TỪ (words) tối đa được chèn vào một chunk.",
+                overlapDesc: "Số TỪ (words) được lặp lại (giao nhau) ở điểm nối giữa chunk trước và chunk sau, giúp ngắt câu không bị mất mát ngữ cảnh.",
+                content: `
+                    <p><strong>Cách hoạt động:</strong> File tài liệu sẽ bị hệ thống tách vụn ra thành các "từ" dựa trên khoảng trắng (dấu cách, dấu tab, xuống dòng).</p>
+                    <div class="alert alert-warning mb-0 border-0 shadow-sm">
+                        <strong class="text-dark"><i class="bi bi-info-circle-fill me-1"></i> Khi Demo nên nhập:</strong><br/>
+                        <ul class="mb-2 mt-2 text-dark">
+                            <li>Max Size: <strong>200</strong></li>
+                            <li>Overlap: <strong>40</strong></li>
+                        </ul>
+                        <p class="mb-0 text-muted small"><strong>Giải thích:</strong> Một đoạn văn bản cung cấp ngữ cảnh lý tưởng cho AI đọc thường dài khoảng 200 từ. Overlap 40 từ giúp đảm bảo nếu câu văn bị cắt làm đôi thì AI vẫn đọc được trọn ý ở khúc nối.</p>
+                    </div>
+                `
+            },
+            "Characters": {
+                title: "Cơ chế theo ký tự (Characters)",
+                maxSizeDesc: "Số lượng KÝ TỰ (Characters) tối đa trong một chunk (tương đương với phép cắt chuỗi Substring).",
+                overlapDesc: "Số lượng KÝ TỰ được giữ lại điệp khúc từ chunk trước sang chunk sau.",
+                content: `
+                    <p><strong>Cách hoạt động:</strong> Hệ thống không thèm quan tâm đến khoảng trắng hay đoạn văn, nó coi toàn bộ file là một chuỗi văn bản dài khổng lồ (string) và cứ thế lấy dao chặt ra theo độ dài chuỗi ký tự (bao gồm cả chữ cái, dấu phẩy, hình ASCII, khoảng trắng...).</p>
+                    <div class="alert alert-warning mb-0 border-0 shadow-sm">
+                        <strong class="text-dark"><i class="bi bi-info-circle-fill me-1"></i> Khi Demo nên nhập:</strong><br/>
+                        <ul class="mb-2 mt-2 text-dark">
+                            <li>Max Size: <strong>1000</strong> (hoặc 1200)</li>
+                            <li>Overlap: <strong>200</strong></li>
+                        </ul>
+                        <p class="mb-0 text-muted small"><strong>Giải thích:</strong> Trung bình một từ tiếng Việt/Anh dài khoảng 5-6 ký tự cộng thêm khoảng trắng. Do đó, 1000 ký tự sẽ tương đương với xấp xỉ 180-200 từ. Đây cũng là kích cỡ mượt mà được khuyến cáo dùng cho các model nhúng (Embedding Model) vừa và nhỏ.</p>
+                    </div>
+                `
+            },
+            "Paragraphs": {
+                title: "Cơ chế theo đoạn văn (Paragraphs)",
+                maxSizeDesc: "Số lượng ĐOẠN VĂN (Paragraphs / Dòng ngắt ngang) được gói gém lại với nhau vào chung một chunk.",
+                overlapDesc: "Số ĐOẠN VĂN bị trùng lặp ở phần tiếp giáp giữa các chunk.",
+                content: `
+                    <p><strong>Cách hoạt động:</strong> Hệ thống quét qua tài liệu, cứ hễ thấy có dấu hiệu trích xuất của việc nhấn "Enter" (ký tự xuống dòng \\n hoặc \\r\\n) thì nó sẽ nhận diện phần nội dung đó là một "Đoạn văn" riêng biệt. Đây là phương pháp giữ cấu trúc logic văn bản tốt nhất.</p>
+                    <div class="alert alert-warning mb-0 border-0 shadow-sm">
+                        <strong class="text-dark"><i class="bi bi-info-circle-fill me-1"></i> Khi Demo nên nhập:</strong><br/>
+                        <ul class="mb-2 mt-2 text-dark">
+                            <li>Max Size: <strong>3</strong> (hoặc 4)</li>
+                            <li>Overlap: <strong>1</strong></li>
+                        </ul>
+                        <p class="mb-0 text-muted small"><strong>Giải thích:</strong> Thông thường với một tài liệu Slide (.docx, .pptx trích xuất ra), cứ 1 gạch đầu dòng là được hệ thống tính là 1 đoạn. Do đó, việc gom 3-4 dòng / đoạn lại với nhau sẽ tạo ra được một cụm thông tin có ý nghĩa mạch lạc nhất. Overlap = 1 đoạn giúp thông tin không bị gãy gập đột ngột khi bước sang chunk tiếp theo.</p>
+                    </div>
+                `
+            }
+        };
+
+        document.addEventListener('DOMContentLoaded', function () {
+            const strategySelect = document.getElementById('Input_Strategy');
+            const infoBox = document.getElementById('strategyInfoBox');
+            const infoTitle = document.querySelector('#infoTitle span');
+            const infoContent = document.getElementById('infoContent');
+            const maxSizeDesc = document.getElementById('maxSizeDesc');
+            const overlapDesc = document.getElementById('overlapDesc');
+
+            function updateInfo() {
+                const strategy = strategySelect.value;
+                const info = strategyInfo[strategy];
+                if (info) {
+                    infoTitle.textContent = info.title;
+                    infoContent.innerHTML = info.content;
+                    maxSizeDesc.textContent = info.maxSizeDesc;
+                    overlapDesc.textContent = info.overlapDesc;
+                    infoBox.style.display = 'block';
+                } else {
+                    infoBox.style.display = 'none';
+                    maxSizeDesc.textContent = "Số lượng (từ/ký tự/đoạn) tối đa trong một chunk.";
+                    overlapDesc.textContent = "Số lượng (từ/ký tự/đoạn) được giữ lại từ chunk liền trước để duy trì ngữ cảnh. Phải nhỏ hơn Kích thước tối đa.";
+                }
+            }
+
+            if (strategySelect) {
+                strategySelect.addEventListener('change', updateInfo);
+                updateInfo(); // Initialize on load
+            }
+        });
+    </script>
 }
