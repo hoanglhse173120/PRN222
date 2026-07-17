@@ -52,7 +52,13 @@ public class PaymentService : IPaymentService
             var txn = await _context.PaymentTransactions
                 .FirstOrDefaultAsync(t => t.TransactionReference == transactionRef);
 
-            if (txn == null || txn.Status != "Pending")
+            if (txn == null)
+                return false;
+
+            if (txn.Status == "Success")
+                return true;
+
+            if (txn.Status != "Pending")
                 return false;
 
             txn.Status = isSuccess ? "Success" : "Failed";
