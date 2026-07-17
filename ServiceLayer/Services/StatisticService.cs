@@ -121,6 +121,56 @@ public class StatisticService : IStatisticService
         return result;
     }
 
+    public async Task<decimal> GetTotalRevenueAsync()
+    {
+        return await _context.PaymentTransactions
+            .Where(pt => pt.Status == "Success")
+            .SumAsync(pt => pt.Amount);
+    }
+
+    public async Task<int> GetActiveSubscriptionsAsync()
+    {
+        var now = DateTime.UtcNow;
+        return await _context.UserSubscriptions
+            .Where(us => us.IsActive && us.StartDate <= now && us.EndDate >= now)
+            .CountAsync();
+    }
+
+    public async Task<double> GetTotalDocumentSizeKbAsync()
+    {
+        var size = await _context.Documents.SumAsync(d => d.FileSizeKb);
+        return size.HasValue ? (double)size.Value : 0;
+    }
+
+    public async Task<Dictionary<string, int>> GetUserRoleBreakdownAsync()
+    {
+        var roleBreakdown = new Dictionary<string, int>();
+        
+        var roles = await _context.Roles.ToListAsync();
+        var userRoles = await _context.UserRoles.ToListAsync();
+        
+        foreach (var role in roles)
+        {
+            var count = userRoles.Count(ur => ur.RoleId == role.Id);
+            if (count > 0)
+            {
+                roleBreakdown[role.Name ?? "Unknown"] = count;
+            }
+        }
+        
+        // Count users with no roles (optional, just in case)
+        var usersWithRoles = userRoles.Select(ur => ur.UserId).Distinct().ToList();
+        var totalUsers = await _context.Users.CountAsync();
+        var usersWithoutRoles = totalUsers - usersWithRoles.Count;
+        
+        if (usersWithoutRoles > 0)
+        {
+            roleBreakdown["No Role"] = usersWithoutRoles;
+        }
+
+        return roleBreakdown;
+    }
+
     public async Task<List<UserSummaryDto>> GetRecentUsersAsync(int limit = 10)
     {
         return await _context.Users

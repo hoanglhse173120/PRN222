@@ -45,6 +45,11 @@ public interface IStatisticService
     Task<int> GetTotalChatSessionsAsync();
     Task<List<ChatStatDto>> GetChatStatsAsync(string filter);
     
+    Task<decimal> GetTotalRevenueAsync();
+    Task<int> GetActiveSubscriptionsAsync();
+    Task<double> GetTotalDocumentSizeKbAsync();
+    Task<Dictionary<string, int>> GetUserRoleBreakdownAsync();
+
     Task<List<UserSummaryDto>> GetRecentUsersAsync(int limit = 10);
     Task<List<DocumentSummaryDto>> GetRecentDocumentsAsync(int limit = 10);
     Task<List<ChatSessionSummaryDto>> GetRecentChatSessionsAsync(int limit = 10);
