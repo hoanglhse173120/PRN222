@@ -214,4 +214,48 @@
             });
         });
     </script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/8.0.7/signalr.min.js"></script>
+    <script>
+        (function () {
+            const connection = new signalR.HubConnectionBuilder()
+                .withUrl("/chatHub")
+                .withAutomaticReconnect()
+                .build();
+
+            connection.on("NewTransactionCompleted", function (data) {
+                showToast("💰", "Giao dịch thành công!", `Một gói cước vừa được thanh toán thành công trị giá ${new Intl.NumberFormat('vi-VN').format(data.Amount)} VNĐ.`, "#10B981", "#059669");
+                setTimeout(() => location.reload(), 1500);
+            });
+
+            connection.start().catch(err => console.warn("SignalR Revenue: không thể kết nối:", err));
+
+            function showToast(icon, title, subtitle, colorFrom, colorTo) {
+                const toast = document.createElement("div");
+                toast.style.cssText = `
+                    position: fixed; bottom: 24px; right: 24px; z-index: 9999;
+                    background: linear-gradient(135deg, ${colorFrom}, ${colorTo});
+                    color: white; padding: 1rem 1.4rem; border-radius: 16px;
+                    box-shadow: 0 8px 32px rgba(0,0,0,0.25);
+                    font-family: Inter, sans-serif; font-size: 0.9rem;
+                    display: flex; align-items: center; gap: 0.75rem;
+                    animation: slideInRight 0.4s ease; max-width: 380px;
+                `;
+                toast.innerHTML = `
+                    <span style="font-size:1.4rem">${icon}</span>
+                    <div>
+                        <div style="font-weight:600">${title}</div>
+                        <div style="opacity:0.85;font-size:0.8rem;margin-top:2px">${subtitle}</div>
+                    </div>
+                `;
+                document.body.appendChild(toast);
+                setTimeout(() => toast.remove(), 2000);
+            }
+        })();
+    </script>
+    <style>
+    @@keyframes slideInRight {
+        from { opacity: 0; transform: translateX(40px); }
+        to   { opacity: 1; transform: translateX(0); }
+    }
+    </style>
 }

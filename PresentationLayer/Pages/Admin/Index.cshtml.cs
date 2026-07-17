@@ -6,6 +6,8 @@ using Microsoft.AspNetCore.Mvc.RazorPages;
 using PresentationLayer.ViewModels.Admin;
 
 using ServiceLayer.Interfaces;
+using Microsoft.AspNetCore.SignalR;
+using PresentationLayer.Hubs;
 
 namespace PresentationLayer.Pages.Admin;
 
@@ -15,12 +17,14 @@ public class IndexModel : PageModel
     private readonly UserManager<IdentityUser> _userManager;
     private readonly ISubjectService _subjectService;
     private readonly IPaymentService _paymentService;
+    private readonly IHubContext<ChatHub> _hubContext;
 
-    public IndexModel(UserManager<IdentityUser> userManager, ISubjectService subjectService, IPaymentService paymentService)
+    public IndexModel(UserManager<IdentityUser> userManager, ISubjectService subjectService, IPaymentService paymentService, IHubContext<ChatHub> hubContext)
     {
         _userManager = userManager;
         _subjectService = subjectService;
         _paymentService = paymentService;
+        _hubContext = hubContext;
     }
 
     public List<UserListItemViewModel> Users { get; set; } = new();
@@ -72,6 +76,9 @@ public class IndexModel : PageModel
         await _subjectService.RemoveAllAssignmentsAsync(userId);
 
         await _userManager.DeleteAsync(user);
+
+        await _hubContext.Clients.All.SendAsync("UserListUpdated");
+
         TempData["Success"] = "Đã xoá tài khoản thành công.";
         return RedirectToPage();
     }

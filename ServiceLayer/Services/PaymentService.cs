@@ -68,28 +68,32 @@ public class PaymentService : IPaymentService
                 var package = await _context.Packages.FindAsync(txn.PackageId);
                 if (package != null)
                 {
-                    // Stacking: find latest active subscription for this user (even if starting in the future)
-                    var latestSub = await _context.UserSubscriptions
+                    // Find the current active subscription for this user
+                    var existingSub = await _context.UserSubscriptions
                         .Where(s => s.UserId == txn.UserId && s.IsActive && s.EndDate > DateTime.Now)
                         .OrderByDescending(s => s.EndDate)
                         .FirstOrDefaultAsync();
 
-                    DateTime startDate = DateTime.Now;
-                    if (latestSub != null)
+                    if (existingSub != null)
                     {
-                        startDate = latestSub.EndDate;
+                        // Renew/Upgrade existing subscription
+                        existingSub.EndDate = existingSub.EndDate.AddDays(package.DurationInDays);
+                        existingSub.PackageId = txn.PackageId; // In case they bought a different package
+                        _context.UserSubscriptions.Update(existingSub);
                     }
-
-                    // Add new subscription (stacked after the previous one)
-                    var sub = new UserSubscription
+                    else
                     {
-                        UserId = txn.UserId,
-                        PackageId = txn.PackageId,
-                        StartDate = startDate,
-                        EndDate = startDate.AddDays(package.DurationInDays),
-                        IsActive = true
-                    };
-                    _context.UserSubscriptions.Add(sub);
+                        // Add new subscription
+                        var sub = new UserSubscription
+                        {
+                            UserId = txn.UserId,
+                            PackageId = txn.PackageId,
+                            StartDate = DateTime.Now,
+                            EndDate = DateTime.Now.AddDays(package.DurationInDays),
+                            IsActive = true
+                        };
+                        _context.UserSubscriptions.Add(sub);
+                    }
                 }
             }
 
@@ -107,7 +111,9 @@ public class PaymentService : IPaymentService
     {
         return await _context.UserSubscriptions
             .Include(s => s.Package)
-            .FirstOrDefaultAsync(s => s.UserId == userId && s.IsActive && s.StartDate <= DateTime.Now && s.EndDate > DateTime.Now);
+            .Where(s => s.UserId == userId && s.IsActive && s.EndDate > DateTime.Now)
+            .OrderByDescending(s => s.EndDate)
+            .FirstOrDefaultAsync();
     }
 
     public async Task<List<PaymentTransaction>> GetAllTransactionsAsync()

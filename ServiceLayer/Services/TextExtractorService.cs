@@ -31,7 +31,8 @@ public class TextExtractorService : ITextExtractorService
         using var pdf = PdfDocument.Open(filePath);
         foreach (var page in pdf.GetPages())
         {
-            sb.AppendLine(page.Text);
+            var words = page.GetWords();
+            sb.AppendLine(string.Join(" ", words.Select(w => w.Text)));
         }
         return sb.ToString();
     }

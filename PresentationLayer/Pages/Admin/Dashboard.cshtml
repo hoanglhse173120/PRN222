@@ -75,8 +75,8 @@
                 <div class="card-header bg-white">
                     <h6 class="mb-0"><i class="bi bi-person-lines-fill"></i> Người dùng mới</h6>
                 </div>
-                <div class="card-body p-0">
-                    <table class="table table-hover table-striped mb-0 small">
+                <div class="card-body p-0 table-responsive">
+                    <table class="table table-hover table-striped mb-0 small" style="white-space: nowrap;">
                         <thead>
                             <tr>
                                 <th>Email</th>
@@ -87,7 +87,7 @@
                             @foreach(var u in Model.RecentUsers)
                             {
                                 <tr>
-                                    <td>@u.Email</td>
+                                    <td><div class="text-truncate" style="max-width:150px;" title="@u.Email">@u.Email</div></td>
                                     <td>
                                         @if(u.EmailConfirmed) { <span class="badge bg-success">Verified</span> }
                                         else { <span class="badge bg-secondary">Unverified</span> }
@@ -104,8 +104,8 @@
                 <div class="card-header bg-white">
                     <h6 class="mb-0"><i class="bi bi-file-earmark-text"></i> Tài liệu gần đây</h6>
                 </div>
-                <div class="card-body p-0">
-                    <table class="table table-hover table-striped mb-0 small">
+                <div class="card-body p-0 table-responsive">
+                    <table class="table table-hover table-striped mb-0 small" style="white-space: nowrap;">
                         <thead>
                             <tr>
                                 <th>Tên file</th>
@@ -117,7 +117,7 @@
                             {
                                 <tr>
                                     <td><div class="text-truncate" style="max-width:150px;" title="@d.FileName">@d.FileName</div></td>
-                                    <td>@d.SubjectName</td>
+                                    <td><div class="text-truncate" style="max-width:80px;" title="@d.SubjectName">@d.SubjectName</div></td>
                                 </tr>
                             }
                         </tbody>
@@ -130,8 +130,8 @@
                 <div class="card-header bg-white">
                     <h6 class="mb-0"><i class="bi bi-chat-dots"></i> Phiên Chat gần đây</h6>
                 </div>
-                <div class="card-body p-0">
-                    <table class="table table-hover table-striped mb-0 small">
+                <div class="card-body p-0 table-responsive">
+                    <table class="table table-hover table-striped mb-0 small" style="white-space: nowrap;">
                         <thead>
                             <tr>
                                 <th>Session</th>
@@ -264,4 +264,64 @@
             });
         });
     </script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/microsoft-signalr/8.0.7/signalr.min.js"></script>
+    <script>
+        (function () {
+            const connection = new signalR.HubConnectionBuilder()
+                .withUrl("/chatHub")
+                .withAutomaticReconnect()
+                .build();
+
+            function refreshDashboard(icon, title, subtitle, colorFrom, colorTo) {
+                showToast(icon, title, subtitle, colorFrom, colorTo);
+                setTimeout(() => location.reload(), 1500);
+            }
+
+            connection.on("NewUserRegistered", function (data) {
+                refreshDashboard("👤", "Người dùng mới!", "Hệ thống vừa có thêm người dùng mới.", "#3B82F6", "#2563EB");
+            });
+
+            connection.on("NewChatSessionCreated", function () {
+                refreshDashboard("💬", "Phiên chat mới!", "Một người dùng vừa bắt đầu phiên trò chuyện mới.", "#8B5CF6", "#7C3AED");
+            });
+
+            connection.on("NewTransactionCompleted", function (data) {
+                refreshDashboard("💰", "Doanh thu mới!", "Một giao dịch vừa được thanh toán thành công.", "#10B981", "#059669");
+            });
+
+            connection.on("NewDocumentUploaded", function (data) {
+                refreshDashboard("📄", "Tài liệu mới!", "Một tài liệu mới vừa được tải lên hệ thống.", "#F59E0B", "#D97706");
+            });
+
+            connection.start().catch(err => console.warn("SignalR Dashboard: không thể kết nối:", err));
+
+            function showToast(icon, title, subtitle, colorFrom, colorTo) {
+                const toast = document.createElement("div");
+                toast.style.cssText = `
+                    position: fixed; bottom: 24px; right: 24px; z-index: 9999;
+                    background: linear-gradient(135deg, ${colorFrom}, ${colorTo});
+                    color: white; padding: 1rem 1.4rem; border-radius: 16px;
+                    box-shadow: 0 8px 32px rgba(0,0,0,0.25);
+                    font-family: Inter, sans-serif; font-size: 0.9rem;
+                    display: flex; align-items: center; gap: 0.75rem;
+                    animation: slideInRight 0.4s ease; max-width: 380px;
+                `;
+                toast.innerHTML = `
+                    <span style="font-size:1.4rem">${icon}</span>
+                    <div>
+                        <div style="font-weight:600">${title}</div>
+                        <div style="opacity:0.85;font-size:0.8rem;margin-top:2px">${subtitle}</div>
+                    </div>
+                `;
+                document.body.appendChild(toast);
+                setTimeout(() => toast.remove(), 2000);
+            }
+        })();
+    </script>
+    <style>
+    @@keyframes slideInRight {
+        from { opacity: 0; transform: translateX(40px); }
+        to   { opacity: 1; transform: translateX(0); }
+    }
+    </style>
 }

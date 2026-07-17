@@ -76,6 +76,7 @@ public class RagService : IRagService
                 SubjectId = c.Document.SubjectId,
                 SubjectName = c.Document.Subject?.SubjectName,
                 FileName = c.Document.FileName ?? "Unknown",
+                FilePath = c.Document.FilePath,
                 ParsedEmbedding = string.IsNullOrEmpty(c.Embedding) ? null : JsonSerializer.Deserialize<float[]>(c.Embedding)
             }).ToList();
 
@@ -137,6 +138,7 @@ public class RagService : IRagService
             ChunkID = x.chunk.ChunkId,
             DocumentID = x.chunk.DocumentId,
             FileName = x.chunk.FileName,
+            FilePath = x.chunk.FilePath,
             SubjectName = x.chunk.SubjectName,
             ChunkContent = x.chunk.ChunkContent.Length > 300
                 ? x.chunk.ChunkContent[..300] + "..."

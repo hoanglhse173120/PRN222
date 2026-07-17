@@ -15,4 +15,5 @@ public class RagCacheItemDto
     
     // Document Info
     public string FileName { get; set; } = string.Empty;
+    public string? FilePath { get; set; }
 }

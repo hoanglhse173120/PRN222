@@ -102,6 +102,7 @@ public class ChatService : IChatService
                 ChunkID = ms.ChunkId,
                 Score = ms.RelevanceScore ?? 0,
                 FileName = ms.Chunk?.Document?.FileName ?? "Tài liệu không xác định",
+                FilePath = ms.Chunk?.Document?.FilePath,
                 SubjectName = ms.Chunk?.Document?.Subject?.SubjectName,
                 ChunkContent = ms.Chunk?.ChunkContent ?? ""
             }).ToList()

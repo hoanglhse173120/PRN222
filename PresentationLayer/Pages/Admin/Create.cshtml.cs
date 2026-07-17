@@ -3,6 +3,8 @@ using Microsoft.AspNetCore.Identity;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.RazorPages;
 using PresentationLayer.ViewModels.Admin;
+using Microsoft.AspNetCore.SignalR;
+using PresentationLayer.Hubs;
 
 namespace PresentationLayer.Pages.Admin;
 
@@ -10,10 +12,12 @@ namespace PresentationLayer.Pages.Admin;
 public class CreateModel : PageModel
 {
     private readonly UserManager<IdentityUser> _userManager;
+    private readonly IHubContext<ChatHub> _hubContext;
 
-    public CreateModel(UserManager<IdentityUser> userManager)
+    public CreateModel(UserManager<IdentityUser> userManager, IHubContext<ChatHub> hubContext)
     {
         _userManager = userManager;
+        _hubContext = hubContext;
     }
 
     [BindProperty]
@@ -41,6 +45,10 @@ public class CreateModel : PageModel
         }
 
         await _userManager.AddToRoleAsync(user, Input.Role);
+
+        await _hubContext.Clients.All.SendAsync("NewUserRegistered", new { Email = Input.Email, Role = Input.Role });
+        await _hubContext.Clients.All.SendAsync("UserListUpdated");
+
         TempData["Success"] = $"Đã tạo tài khoản {Input.Email} với vai trò {Input.Role}.";
         return RedirectToPage("Index");
     }

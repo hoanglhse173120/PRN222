@@ -335,7 +335,19 @@
                                                 @foreach (var src in msg.Sources)
                                                 {
                                                     <div class="source-item">
-                                                        <div class="source-title">@src.FileName <span class="source-score">Độ khớp: @Math.Round(src.Score * 100)%</span></div>
+                                                        <div class="source-title">
+                                                            @if (!string.IsNullOrEmpty(src.FilePath))
+                                                            {
+                                                                <a href="@src.FilePath" target="_blank" style="color: inherit; text-decoration: none;">
+                                                                    <i class="bi bi-file-earmark-pdf me-1"></i>@src.FileName
+                                                                </a>
+                                                            }
+                                                            else
+                                                            {
+                                                                <span><i class="bi bi-file-earmark-text me-1"></i>@src.FileName</span>
+                                                            }
+                                                            <span class="source-score">Độ khớp: @Math.Round(src.Score * 100)%</span>
+                                                        </div>
                                                         <div style="color: #6b7280; font-size: 0.75rem; margin-bottom: 4px;">Môn: @(src.SubjectName ?? "N/A")</div>
                                                         <div>@src.ChunkContent</div>
                                                     </div>
@@ -473,8 +485,12 @@
                 sources.forEach(src => {
                     const subj = src.subjectName || "N/A";
                     const score = Math.round(src.score * 100);
+                    const titleHtml = src.filePath 
+                        ? `<a href="${escapeHtml(src.filePath)}" target="_blank" style="color: inherit; text-decoration: none;"><i class="bi bi-file-earmark-pdf me-1"></i>${escapeHtml(src.fileName)}</a>`
+                        : `<span><i class="bi bi-file-earmark-text me-1"></i>${escapeHtml(src.fileName)}</span>`;
+
                     html += `<div class="source-item">
-                                <div class="source-title">${escapeHtml(src.fileName)} <span class="source-score">Độ khớp: ${score}%</span></div>
+                                <div class="source-title">${titleHtml} <span class="source-score">Độ khớp: ${score}%</span></div>
                                 <div style="color: #6b7280; font-size: 0.75rem; margin-bottom: 4px;">Môn: ${escapeHtml(subj)}</div>
                                 <div>${escapeHtml(src.chunkContent)}</div>
                             </div>`;

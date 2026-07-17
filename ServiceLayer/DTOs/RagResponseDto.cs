@@ -9,6 +9,7 @@ public class RagChunkResultDto
     public string ChunkContent { get; set; } = null!;
     public int? ChunkIndex { get; set; }
     public double Score { get; set; }
+    public string? FilePath { get; set; }
 }
 
 public class RagResponseDto

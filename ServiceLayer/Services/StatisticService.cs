@@ -126,71 +126,68 @@ public class StatisticService : IStatisticService
         var result = new List<RevenueStatDto>();
         var now = DateTime.Today;
 
-        if (filter == "week") // 4 weeks
-        {
-            var startDate = now.AddDays(-27);
-            var txns = await _context.PaymentTransactions.Where(t => t.TransactionDate >= startDate && t.Status == "Success").ToListAsync();
-            var subs = await _context.UserSubscriptions.Where(s => s.StartDate >= startDate).ToListAsync();
+        var allTransactions = await _context.PaymentTransactions
+            .Where(pt => pt.Status == "Success")
+            .ToListAsync();
 
+        if (filter == "year")
+        {
+            var startDate = new DateTime(now.Year - 4, 1, 1);
+            
+            for (int i = 4; i >= 0; i--)
+            {
+                int targetYear = now.Year - i;
+                
+                var txnsInYear = allTransactions.Where(t => t.TransactionDate.Year == targetYear);
+                
+                decimal revenue = txnsInYear.Sum(t => t.Amount);
+                int subCount = txnsInYear.Count();
+
+                result.Add(new RevenueStatDto { Label = targetYear.ToString(), Revenue = revenue, SubscriptionCount = subCount });
+            }
+        }
+        else if (filter == "month")
+        {
+            for (int i = 11; i >= 0; i--)
+            {
+                var targetMonth = now.AddMonths(-i);
+                
+                var txnsInMonth = allTransactions.Where(t => t.TransactionDate.Month == targetMonth.Month && t.TransactionDate.Year == targetMonth.Year);
+                
+                decimal revenue = txnsInMonth.Sum(t => t.Amount);
+                int subCount = txnsInMonth.Count();
+
+                result.Add(new RevenueStatDto { Label = targetMonth.ToString("MM/yyyy"), Revenue = revenue, SubscriptionCount = subCount });
+            }
+        }
+        else if (filter == "week")
+        {
             for (int i = 3; i >= 0; i--)
             {
                 var startOfWeek = now.AddDays(-(i * 7 + 6));
                 var endOfWeek = now.AddDays(-(i * 7));
                 var endBoundary = endOfWeek.AddDays(1);
                 
-                decimal revenue = txns.Where(t => t.TransactionDate >= startOfWeek && t.TransactionDate < endBoundary).Sum(t => t.Amount);
-                int count = subs.Count(s => s.StartDate >= startOfWeek && s.StartDate < endBoundary);
-
-                result.Add(new RevenueStatDto { Label = $"{startOfWeek:dd/MM}-{endOfWeek:dd/MM}", Revenue = revenue, SubscriptionCount = count });
-            }
-        }
-        else if (filter == "month") // 12 months
-        {
-            var startDate = now.AddMonths(-11);
-            startDate = new DateTime(startDate.Year, startDate.Month, 1);
-            var txns = await _context.PaymentTransactions.Where(t => t.TransactionDate >= startDate && t.Status == "Success").ToListAsync();
-            var subs = await _context.UserSubscriptions.Where(s => s.StartDate >= startDate).ToListAsync();
-
-            for (int i = 11; i >= 0; i--)
-            {
-                var targetMonth = now.AddMonths(-i);
+                var txnsInWeek = allTransactions.Where(t => t.TransactionDate >= startOfWeek && t.TransactionDate < endBoundary);
                 
-                decimal revenue = txns.Where(t => t.TransactionDate.Month == targetMonth.Month && t.TransactionDate.Year == targetMonth.Year).Sum(t => t.Amount);
-                int count = subs.Count(s => s.StartDate.Month == targetMonth.Month && s.StartDate.Year == targetMonth.Year);
+                decimal revenue = txnsInWeek.Sum(t => t.Amount);
+                int subCount = txnsInWeek.Count();
 
-                result.Add(new RevenueStatDto { Label = targetMonth.ToString("MM/yyyy"), Revenue = revenue, SubscriptionCount = count });
+                result.Add(new RevenueStatDto { Label = $"{startOfWeek:dd/MM}-{endOfWeek:dd/MM}", Revenue = revenue, SubscriptionCount = subCount });
             }
         }
-        else if (filter == "year") // 5 years
+        else // default to "day"
         {
-            var startDate = new DateTime(now.Year - 4, 1, 1);
-            var txns = await _context.PaymentTransactions.Where(t => t.TransactionDate >= startDate && t.Status == "Success").ToListAsync();
-            var subs = await _context.UserSubscriptions.Where(s => s.StartDate >= startDate).ToListAsync();
-
-            for (int i = 4; i >= 0; i--)
-            {
-                int targetYear = now.Year - i;
-                
-                decimal revenue = txns.Where(t => t.TransactionDate.Year == targetYear).Sum(t => t.Amount);
-                int count = subs.Count(s => s.StartDate.Year == targetYear);
-
-                result.Add(new RevenueStatDto { Label = targetYear.ToString(), Revenue = revenue, SubscriptionCount = count });
-            }
-        }
-        else // default to "day" (7 days)
-        {
-            var startDate = now.AddDays(-6);
-            var txns = await _context.PaymentTransactions.Where(t => t.TransactionDate >= startDate && t.Status == "Success").ToListAsync();
-            var subs = await _context.UserSubscriptions.Where(s => s.StartDate >= startDate).ToListAsync();
-
             for (int i = 6; i >= 0; i--)
             {
                 var targetDay = now.AddDays(-i);
                 
-                decimal revenue = txns.Where(t => t.TransactionDate.Date == targetDay).Sum(t => t.Amount);
-                int count = subs.Count(s => s.StartDate.Date == targetDay);
+                var txnsInDay = allTransactions.Where(t => t.TransactionDate.Date == targetDay);
+                
+                decimal revenue = txnsInDay.Sum(t => t.Amount);
+                int subCount = txnsInDay.Count();
 
-                result.Add(new RevenueStatDto { Label = targetDay.ToString("dd/MM"), Revenue = revenue, SubscriptionCount = count });
+                result.Add(new RevenueStatDto { Label = targetDay.ToString("dd/MM"), Revenue = revenue, SubscriptionCount = subCount });
             }
         }
 

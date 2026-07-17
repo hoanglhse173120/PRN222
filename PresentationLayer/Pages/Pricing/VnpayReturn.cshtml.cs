@@ -8,6 +8,8 @@ using Microsoft.Extensions.Configuration;
 using ServiceLayer.Interfaces;
 using ServiceLayer.Services;
 using DataAccessLayer.Entities;
+using Microsoft.AspNetCore.SignalR;
+using PresentationLayer.Hubs;
 
 namespace PresentationLayer.Pages.Pricing;
 
@@ -18,17 +20,20 @@ public class VnpayReturnModel : PageModel
     private readonly UserManager<IdentityUser> _userManager;
     private readonly SignInManager<IdentityUser> _signInManager;
     private readonly IConfiguration _config;
+    private readonly IHubContext<ChatHub> _hubContext;
 
     public VnpayReturnModel(
         IPaymentService paymentService,
         UserManager<IdentityUser> userManager,
         SignInManager<IdentityUser> signInManager,
-        IConfiguration config)
+        IConfiguration config,
+        IHubContext<ChatHub> hubContext)
     {
         _paymentService = paymentService;
         _userManager = userManager;
         _signInManager = signInManager;
         _config = config;
+        _hubContext = hubContext;
     }
 
     public string Message { get; set; } = string.Empty;
@@ -84,6 +89,9 @@ public class VnpayReturnModel : PageModel
                 {
                     IsSuccess = true;
                     Message = "Giao dịch thanh toán nâng cấp tài khoản thành công!";
+
+                    // Emit event to Admin Dashboard/Revenue page
+                    await _hubContext.Clients.All.SendAsync("NewTransactionCompleted", new { Amount = Amount });
 
                     // Refresh user sign-in to reload claims immediately
                     var user = await _userManager.GetUserAsync(User);
