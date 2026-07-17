@@ -14,11 +14,13 @@ public class IndexModel : PageModel
 {
     private readonly UserManager<IdentityUser> _userManager;
     private readonly ISubjectService _subjectService;
+    private readonly IPaymentService _paymentService;
 
-    public IndexModel(UserManager<IdentityUser> userManager, ISubjectService subjectService)
+    public IndexModel(UserManager<IdentityUser> userManager, ISubjectService subjectService, IPaymentService paymentService)
     {
         _userManager = userManager;
         _subjectService = subjectService;
+        _paymentService = paymentService;
     }
 
     public List<UserListItemViewModel> Users { get; set; } = new();
@@ -34,12 +36,30 @@ public class IndexModel : PageModel
 
             var assignedSubjects = await _subjectService.GetAssignedSubjectNamesAsync(user.Id);
 
+            bool isPremium = false;
+            string packageName = "—";
+            DateTime? expiryDate = null;
+
+            if (role == "Student")
+            {
+                var activeSub = await _paymentService.GetActiveSubscriptionAsync(user.Id);
+                if (activeSub != null)
+                {
+                    isPremium = true;
+                    packageName = activeSub.Package.PackageName;
+                    expiryDate = activeSub.EndDate;
+                }
+            }
+
             Users.Add(new UserListItemViewModel
             {
                 UserId = user.Id,
                 Email = user.Email ?? "",
                 Role = role,
-                AssignedSubjects = assignedSubjects
+                AssignedSubjects = assignedSubjects,
+                IsPremium = isPremium,
+                SubscriptionPackage = packageName,
+                ExpiryDate = expiryDate
             });
         }
     }
