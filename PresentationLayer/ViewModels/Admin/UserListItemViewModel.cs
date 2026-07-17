@@ -6,4 +6,7 @@ public class UserListItemViewModel
     public string Email { get; set; } = "";
     public string Role { get; set; } = "";
     public List<string> AssignedSubjects { get; set; } = new();
+    public bool IsPremium { get; set; }
+    public string SubscriptionPackage { get; set; } = "—";
+    public DateTime? ExpiryDate { get; set; }
 }
