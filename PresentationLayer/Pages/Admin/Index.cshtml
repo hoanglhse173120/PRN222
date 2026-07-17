@@ -38,6 +38,8 @@
                         <th class="ps-4">Email</th>
                         <th>Vai trò</th>
                         <th>Môn học được phân công</th>
+                        <th>Gói dịch vụ</th>
+                        <th>Hạn sử dụng</th>
                         <th class="text-end pe-4">Thao tác</th>
                     </tr>
                 </thead>
@@ -73,6 +75,35 @@
                                     <span class="text-muted">—</span>
                                 }
                             </td>
+                            <td class="align-middle">
+                                @if (user.Role == "Student")
+                                {
+                                    @if (user.IsPremium)
+                                    {
+                                        <span class="badge bg-warning text-dark border border-warning-subtle">
+                                            👑 @user.SubscriptionPackage
+                                        </span>
+                                    }
+                                    else
+                                    {
+                                        <span class="text-secondary small">Mặc định (Free)</span>
+                                    }
+                                }
+                                else
+                                {
+                                    <span class="text-muted">—</span>
+                                }
+                            </td>
+                            <td class="align-middle small">
+                                @if (user.Role == "Student" && user.IsPremium && user.ExpiryDate.HasValue)
+                                {
+                                    <span class="fw-medium">@user.ExpiryDate.Value.ToString("dd/MM/yyyy")</span>
+                                }
+                                else
+                                {
+                                    <span class="text-muted">—</span>
+                                }
+                            </td>
                             <td class="align-middle text-end pe-4">
                                 @if (user.Role == "Teacher")
                                 {
@@ -95,7 +126,7 @@
                     @if (!Model.Users.Any())
                     {
                         <tr>
-                            <td colspan="4" class="text-center text-muted py-5">
+                            <td colspan="6" class="text-center text-muted py-5">
                                 <i class="bi bi-people fs-2 d-block mb-2 opacity-25"></i>
                                 Chưa có tài khoản nào. Hãy tạo mới!
                             </td>

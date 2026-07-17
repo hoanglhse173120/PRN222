@@ -121,6 +121,132 @@ public class StatisticService : IStatisticService
         return result;
     }
 
+    public async Task<List<RevenueStatDto>> GetRevenueStatsAsync(string filter)
+    {
+        var result = new List<RevenueStatDto>();
+        var now = DateTime.Today;
+
+        if (filter == "week") // 4 weeks
+        {
+            var startDate = now.AddDays(-27);
+            var txns = await _context.PaymentTransactions.Where(t => t.TransactionDate >= startDate && t.Status == "Success").ToListAsync();
+            var subs = await _context.UserSubscriptions.Where(s => s.StartDate >= startDate).ToListAsync();
+
+            for (int i = 3; i >= 0; i--)
+            {
+                var startOfWeek = now.AddDays(-(i * 7 + 6));
+                var endOfWeek = now.AddDays(-(i * 7));
+                var endBoundary = endOfWeek.AddDays(1);
+                
+                decimal revenue = txns.Where(t => t.TransactionDate >= startOfWeek && t.TransactionDate < endBoundary).Sum(t => t.Amount);
+                int count = subs.Count(s => s.StartDate >= startOfWeek && s.StartDate < endBoundary);
+
+                result.Add(new RevenueStatDto { Label = $"{startOfWeek:dd/MM}-{endOfWeek:dd/MM}", Revenue = revenue, SubscriptionCount = count });
+            }
+        }
+        else if (filter == "month") // 12 months
+        {
+            var startDate = now.AddMonths(-11);
+            startDate = new DateTime(startDate.Year, startDate.Month, 1);
+            var txns = await _context.PaymentTransactions.Where(t => t.TransactionDate >= startDate && t.Status == "Success").ToListAsync();
+            var subs = await _context.UserSubscriptions.Where(s => s.StartDate >= startDate).ToListAsync();
+
+            for (int i = 11; i >= 0; i--)
+            {
+                var targetMonth = now.AddMonths(-i);
+                
+                decimal revenue = txns.Where(t => t.TransactionDate.Month == targetMonth.Month && t.TransactionDate.Year == targetMonth.Year).Sum(t => t.Amount);
+                int count = subs.Count(s => s.StartDate.Month == targetMonth.Month && s.StartDate.Year == targetMonth.Year);
+
+                result.Add(new RevenueStatDto { Label = targetMonth.ToString("MM/yyyy"), Revenue = revenue, SubscriptionCount = count });
+            }
+        }
+        else if (filter == "year") // 5 years
+        {
+            var startDate = new DateTime(now.Year - 4, 1, 1);
+            var txns = await _context.PaymentTransactions.Where(t => t.TransactionDate >= startDate && t.Status == "Success").ToListAsync();
+            var subs = await _context.UserSubscriptions.Where(s => s.StartDate >= startDate).ToListAsync();
+
+            for (int i = 4; i >= 0; i--)
+            {
+                int targetYear = now.Year - i;
+                
+                decimal revenue = txns.Where(t => t.TransactionDate.Year == targetYear).Sum(t => t.Amount);
+                int count = subs.Count(s => s.StartDate.Year == targetYear);
+
+                result.Add(new RevenueStatDto { Label = targetYear.ToString(), Revenue = revenue, SubscriptionCount = count });
+            }
+        }
+        else // default to "day" (7 days)
+        {
+            var startDate = now.AddDays(-6);
+            var txns = await _context.PaymentTransactions.Where(t => t.TransactionDate >= startDate && t.Status == "Success").ToListAsync();
+            var subs = await _context.UserSubscriptions.Where(s => s.StartDate >= startDate).ToListAsync();
+
+            for (int i = 6; i >= 0; i--)
+            {
+                var targetDay = now.AddDays(-i);
+                
+                decimal revenue = txns.Where(t => t.TransactionDate.Date == targetDay).Sum(t => t.Amount);
+                int count = subs.Count(s => s.StartDate.Date == targetDay);
+
+                result.Add(new RevenueStatDto { Label = targetDay.ToString("dd/MM"), Revenue = revenue, SubscriptionCount = count });
+            }
+        }
+
+        return result;
+    }
+
+    public async Task<decimal> GetTotalRevenueAsync()
+    {
+        return await _context.PaymentTransactions
+            .Where(pt => pt.Status == "Success")
+            .SumAsync(pt => pt.Amount);
+    }
+
+    public async Task<int> GetActiveSubscriptionsAsync()
+    {
+        var now = DateTime.Now;
+        return await _context.UserSubscriptions
+            .Where(us => us.IsActive && us.StartDate <= now && us.EndDate >= now)
+            .CountAsync();
+    }
+
+    public async Task<double> GetTotalDocumentSizeKbAsync()
+    {
+        var size = await _context.Documents.SumAsync(d => d.FileSizeKb);
+        return size.HasValue ? (double)size.Value : 0;
+    }
+
+    public async Task<Dictionary<string, int>> GetUserRoleBreakdownAsync()
+    {
+        var roleBreakdown = new Dictionary<string, int>();
+        
+        var roles = await _context.Roles.ToListAsync();
+        var userRoles = await _context.UserRoles.ToListAsync();
+        
+        foreach (var role in roles)
+        {
+            var count = userRoles.Count(ur => ur.RoleId == role.Id);
+            if (count > 0)
+            {
+                roleBreakdown[role.Name ?? "Unknown"] = count;
+            }
+        }
+        
+        // Count users with no roles (optional, just in case)
+        var usersWithRoles = userRoles.Select(ur => ur.UserId).Distinct().ToList();
+        var totalUsers = await _context.Users.CountAsync();
+        var usersWithoutRoles = totalUsers - usersWithRoles.Count;
+        
+        if (usersWithoutRoles > 0)
+        {
+            roleBreakdown["No Role"] = usersWithoutRoles;
+        }
+
+        return roleBreakdown;
+    }
+
     public async Task<List<UserSummaryDto>> GetRecentUsersAsync(int limit = 10)
     {
         return await _context.Users
