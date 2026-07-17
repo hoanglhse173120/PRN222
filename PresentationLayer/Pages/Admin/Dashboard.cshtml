@@ -11,35 +11,44 @@
 
     <div class="row mb-4">
         <div class="col-md-4">
-            <div class="card text-white bg-primary mb-3 shadow-sm">
-                <div class="card-header">Tổng Người dùng</div>
+            <div class="card text-white bg-primary mb-3 shadow-sm h-100">
+                <div class="card-header">Người dùng</div>
                 <div class="card-body">
                     <h3 class="card-title">@Model.TotalUsers</h3>
-                    <p class="card-text">Người dùng đã đăng ký vào hệ thống.</p>
+                    <p class="card-text mb-1">Thành viên hệ thống</p>
+                    <hr class="my-2 border-white" />
+                    <ul class="list-unstyled mb-0 small">
+                        @foreach(var role in Model.UserRoleBreakdown)
+                        {
+                            <li>- @role.Key: <strong>@role.Value</strong></li>
+                        }
+                    </ul>
                 </div>
             </div>
         </div>
         <div class="col-md-4">
-            <div class="card text-white bg-success mb-3 shadow-sm">
-                <div class="card-header">Tổng Tài liệu RAG</div>
+            <div class="card text-white bg-success mb-3 shadow-sm h-100">
+                <div class="card-header">Tài liệu RAG</div>
                 <div class="card-body">
                     <h3 class="card-title">@Model.TotalDocuments</h3>
-                    <p class="card-text">Tài liệu đã được tải lên và index.</p>
+                    <p class="card-text mb-1">Tài liệu đã index</p>
+                    <hr class="my-2 border-white" />
+                    <p class="card-text small">Tổng dung lượng: <strong>@(Model.TotalDocumentSizeKb > 1024 ? (Model.TotalDocumentSizeKb / 1024).ToString("0.00") + " MB" : Model.TotalDocumentSizeKb.ToString("0.00") + " KB")</strong></p>
                 </div>
             </div>
         </div>
         <div class="col-md-4">
-            <div class="card text-white bg-info mb-3 shadow-sm">
-                <div class="card-header">Tổng Phiên Chat</div>
+            <div class="card text-white bg-info mb-3 shadow-sm h-100">
+                <div class="card-header">Lượt Chat</div>
                 <div class="card-body">
                     <h3 class="card-title">@Model.TotalChatSessions</h3>
-                    <p class="card-text">Phiên trò chuyện được tạo ra bởi người dùng.</p>
+                    <p class="card-text">Phiên trò chuyện đã tạo</p>
                 </div>
             </div>
         </div>
     </div>
 
-    <div class="row">
+    <div class="row mb-4">
         <div class="col-md-12">
             <div class="card shadow-sm">
                 <div class="card-header bg-white d-flex justify-content-between align-items-center">
@@ -55,6 +64,90 @@
                 </div>
                 <div class="card-body">
                     <canvas id="chatStatsChart" width="400" height="120"></canvas>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <div class="row mb-4">
+        <div class="col-md-4">
+            <div class="card shadow-sm h-100">
+                <div class="card-header bg-white">
+                    <h6 class="mb-0"><i class="bi bi-person-lines-fill"></i> Người dùng mới</h6>
+                </div>
+                <div class="card-body p-0">
+                    <table class="table table-hover table-striped mb-0 small">
+                        <thead>
+                            <tr>
+                                <th>Email</th>
+                                <th>Status</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach(var u in Model.RecentUsers)
+                            {
+                                <tr>
+                                    <td>@u.Email</td>
+                                    <td>
+                                        @if(u.EmailConfirmed) { <span class="badge bg-success">Verified</span> }
+                                        else { <span class="badge bg-secondary">Unverified</span> }
+                                    </td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card shadow-sm h-100">
+                <div class="card-header bg-white">
+                    <h6 class="mb-0"><i class="bi bi-file-earmark-text"></i> Tài liệu gần đây</h6>
+                </div>
+                <div class="card-body p-0">
+                    <table class="table table-hover table-striped mb-0 small">
+                        <thead>
+                            <tr>
+                                <th>Tên file</th>
+                                <th>Môn học</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach(var d in Model.RecentDocuments)
+                            {
+                                <tr>
+                                    <td><div class="text-truncate" style="max-width:150px;" title="@d.FileName">@d.FileName</div></td>
+                                    <td>@d.SubjectName</td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-4">
+            <div class="card shadow-sm h-100">
+                <div class="card-header bg-white">
+                    <h6 class="mb-0"><i class="bi bi-chat-dots"></i> Phiên Chat gần đây</h6>
+                </div>
+                <div class="card-body p-0">
+                    <table class="table table-hover table-striped mb-0 small">
+                        <thead>
+                            <tr>
+                                <th>Session</th>
+                                <th>User</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            @foreach(var s in Model.RecentChatSessions)
+                            {
+                                <tr>
+                                    <td><div class="text-truncate" style="max-width:150px;" title="@s.SessionName">@(string.IsNullOrEmpty(s.SessionName) ? "New Chat" : s.SessionName)</div></td>
+                                    <td><div class="text-truncate" style="max-width:100px;">@s.UserEmail</div></td>
+                                </tr>
+                            }
+                        </tbody>
+                    </table>
                 </div>
             </div>
         </div>

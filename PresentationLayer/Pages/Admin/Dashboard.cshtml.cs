@@ -21,6 +21,9 @@ public class DashboardModel : PageModel
     public int TotalUsers { get; set; }
     public int TotalDocuments { get; set; }
     public int TotalChatSessions { get; set; }
+    public double TotalDocumentSizeKb { get; set; }
+    public Dictionary<string, int> UserRoleBreakdown { get; set; } = new();
+    
     public string DailyChatStatsJson { get; set; } = "[]";
 
     public List<UserSummaryDto> RecentUsers { get; set; } = new();
@@ -35,6 +38,8 @@ public class DashboardModel : PageModel
         TotalUsers = await _statisticService.GetTotalUsersAsync();
         TotalDocuments = await _statisticService.GetTotalDocumentsAsync();
         TotalChatSessions = await _statisticService.GetTotalChatSessionsAsync();
+        TotalDocumentSizeKb = await _statisticService.GetTotalDocumentSizeKbAsync();
+        UserRoleBreakdown = await _statisticService.GetUserRoleBreakdownAsync();
         
         var stats = await _statisticService.GetChatStatsAsync(Filter);
         DailyChatStatsJson = JsonSerializer.Serialize(stats);
