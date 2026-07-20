@@ -11,6 +11,7 @@ public class ChatStatDto
     public int SessionCount { get; set; }
     public int DocumentCount { get; set; }
     public int ActiveUserCount { get; set; }
+    public int TokenCount { get; set; }
 }
 
 public class UserSummaryDto
@@ -50,6 +51,7 @@ public interface IStatisticService
     Task<int> GetTotalUsersAsync();
     Task<int> GetTotalDocumentsAsync();
     Task<int> GetTotalChatSessionsAsync();
+    Task<int> GetTotalTokensUsedAsync();
     Task<List<ChatStatDto>> GetChatStatsAsync(string filter);
     Task<List<RevenueStatDto>> GetRevenueStatsAsync(string filter);
     

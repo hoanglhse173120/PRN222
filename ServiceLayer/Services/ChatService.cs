@@ -68,7 +68,8 @@ public class ChatService : IChatService
             SessionId = sessionId,
             Role = role,
             MessageText = messageText,
-            Timestamp = DateTime.Now
+            Timestamp = DateTime.Now,
+            TokenCount = (messageText?.Length ?? 0) / 4
         };
         await _messageRepo.AddAsync(message);
         await _messageRepo.SaveChangesAsync();
@@ -138,12 +139,14 @@ public class ChatService : IChatService
         int sessionId, string role, string messageText,
         List<RagChunkResultDto> sources)
     {
+        var contextLength = sources?.Sum(s => s.ChunkContent?.Length ?? 0) ?? 0;
         var message = new ChatMessage
         {
             SessionId = sessionId,
             Role = role,
             MessageText = messageText,
-            Timestamp = DateTime.Now
+            Timestamp = DateTime.Now,
+            TokenCount = ((messageText?.Length ?? 0) + contextLength) / 4
         };
         await _messageRepo.AddAsync(message);
         await _messageRepo.SaveChangesAsync();

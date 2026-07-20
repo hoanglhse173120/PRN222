@@ -33,6 +33,11 @@ public class StatisticService : IStatisticService
         return await _context.ChatSessions.CountAsync();
     }
 
+    public async Task<int> GetTotalTokensUsedAsync()
+    {
+        return await _context.ChatMessages.SumAsync(m => m.TokenCount);
+    }
+
     public async Task<List<ChatStatDto>> GetChatStatsAsync(string filter)
     {
         var result = new List<ChatStatDto>();
@@ -52,11 +57,12 @@ public class StatisticService : IStatisticService
                 var endBoundary = endOfWeek.AddDays(1);
                 
                 int msgCount = statsFromDb.Count(m => m.Timestamp >= startOfWeek && m.Timestamp < endBoundary);
+                int tokenCount = statsFromDb.Where(m => m.Timestamp >= startOfWeek && m.Timestamp < endBoundary).Sum(m => m.TokenCount);
                 int sessionCount = sessionsFromDb.Count(s => s.CreatedAt >= startOfWeek && s.CreatedAt < endBoundary);
                 int docCount = docsFromDb.Count(d => d.UploadedAt >= startOfWeek && d.UploadedAt < endBoundary);
                 int activeUserCount = sessionsFromDb.Where(s => s.CreatedAt >= startOfWeek && s.CreatedAt < endBoundary).Select(s => s.UserId).Distinct().Count();
 
-                result.Add(new ChatStatDto { Label = $"{startOfWeek:dd/MM}-{endOfWeek:dd/MM}", MessageCount = msgCount, SessionCount = sessionCount, DocumentCount = docCount, ActiveUserCount = activeUserCount });
+                result.Add(new ChatStatDto { Label = $"{startOfWeek:dd/MM}-{endOfWeek:dd/MM}", MessageCount = msgCount, SessionCount = sessionCount, DocumentCount = docCount, ActiveUserCount = activeUserCount, TokenCount = tokenCount });
             }
         }
         else if (filter == "month") // 12 months
@@ -72,11 +78,12 @@ public class StatisticService : IStatisticService
                 var targetMonth = now.AddMonths(-i);
                 
                 int msgCount = statsFromDb.Count(m => m.Timestamp.HasValue && m.Timestamp.Value.Month == targetMonth.Month && m.Timestamp.Value.Year == targetMonth.Year);
+                int tokenCount = statsFromDb.Where(m => m.Timestamp.HasValue && m.Timestamp.Value.Month == targetMonth.Month && m.Timestamp.Value.Year == targetMonth.Year).Sum(m => m.TokenCount);
                 int sessionCount = sessionsFromDb.Count(s => s.CreatedAt.HasValue && s.CreatedAt.Value.Month == targetMonth.Month && s.CreatedAt.Value.Year == targetMonth.Year);
                 int docCount = docsFromDb.Count(d => d.UploadedAt.HasValue && d.UploadedAt.Value.Month == targetMonth.Month && d.UploadedAt.Value.Year == targetMonth.Year);
                 int activeUserCount = sessionsFromDb.Where(s => s.CreatedAt.HasValue && s.CreatedAt.Value.Month == targetMonth.Month && s.CreatedAt.Value.Year == targetMonth.Year).Select(s => s.UserId).Distinct().Count();
 
-                result.Add(new ChatStatDto { Label = targetMonth.ToString("MM/yyyy"), MessageCount = msgCount, SessionCount = sessionCount, DocumentCount = docCount, ActiveUserCount = activeUserCount });
+                result.Add(new ChatStatDto { Label = targetMonth.ToString("MM/yyyy"), MessageCount = msgCount, SessionCount = sessionCount, DocumentCount = docCount, ActiveUserCount = activeUserCount, TokenCount = tokenCount });
             }
         }
         else if (filter == "year") // 5 years
@@ -91,11 +98,12 @@ public class StatisticService : IStatisticService
                 int targetYear = now.Year - i;
                 
                 int msgCount = statsFromDb.Count(m => m.Timestamp.HasValue && m.Timestamp.Value.Year == targetYear);
+                int tokenCount = statsFromDb.Where(m => m.Timestamp.HasValue && m.Timestamp.Value.Year == targetYear).Sum(m => m.TokenCount);
                 int sessionCount = sessionsFromDb.Count(s => s.CreatedAt.HasValue && s.CreatedAt.Value.Year == targetYear);
                 int docCount = docsFromDb.Count(d => d.UploadedAt.HasValue && d.UploadedAt.Value.Year == targetYear);
                 int activeUserCount = sessionsFromDb.Where(s => s.CreatedAt.HasValue && s.CreatedAt.Value.Year == targetYear).Select(s => s.UserId).Distinct().Count();
 
-                result.Add(new ChatStatDto { Label = targetYear.ToString(), MessageCount = msgCount, SessionCount = sessionCount, DocumentCount = docCount, ActiveUserCount = activeUserCount });
+                result.Add(new ChatStatDto { Label = targetYear.ToString(), MessageCount = msgCount, SessionCount = sessionCount, DocumentCount = docCount, ActiveUserCount = activeUserCount, TokenCount = tokenCount });
             }
         }
         else // default to "day" (7 days)
@@ -110,11 +118,12 @@ public class StatisticService : IStatisticService
                 var targetDay = now.AddDays(-i);
                 
                 int msgCount = statsFromDb.Count(m => m.Timestamp.HasValue && m.Timestamp.Value.Date == targetDay);
+                int tokenCount = statsFromDb.Where(m => m.Timestamp.HasValue && m.Timestamp.Value.Date == targetDay).Sum(m => m.TokenCount);
                 int sessionCount = sessionsFromDb.Count(s => s.CreatedAt.HasValue && s.CreatedAt.Value.Date == targetDay);
                 int docCount = docsFromDb.Count(d => d.UploadedAt.HasValue && d.UploadedAt.Value.Date == targetDay);
                 int activeUserCount = sessionsFromDb.Where(s => s.CreatedAt.HasValue && s.CreatedAt.Value.Date == targetDay).Select(s => s.UserId).Distinct().Count();
 
-                result.Add(new ChatStatDto { Label = targetDay.ToString("dd/MM"), MessageCount = msgCount, SessionCount = sessionCount, DocumentCount = docCount, ActiveUserCount = activeUserCount });
+                result.Add(new ChatStatDto { Label = targetDay.ToString("dd/MM"), MessageCount = msgCount, SessionCount = sessionCount, DocumentCount = docCount, ActiveUserCount = activeUserCount, TokenCount = tokenCount });
             }
         }
 

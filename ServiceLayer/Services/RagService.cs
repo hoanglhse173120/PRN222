@@ -133,7 +133,11 @@ public class RagService : IRagService
 
         var answer = await CallLlmAsync(question, contextBuilder.ToString(), conversationHistory, onChunkReceived, cancellationToken);
 
-        var sources = scoredChunks.Select(x => new RagChunkResultDto
+        var answerToLower = answer.ToLower();
+        var isKnowledgeAnswer = answerToLower.Contains("theo tài liệu") && 
+                                !answerToLower.Contains("không tìm thấy thông tin");
+
+        var sources = isKnowledgeAnswer ? scoredChunks.Select(x => new RagChunkResultDto
         {
             ChunkID = x.chunk.ChunkId,
             DocumentID = x.chunk.DocumentId,
@@ -145,7 +149,7 @@ public class RagService : IRagService
                 : x.chunk.ChunkContent,
             ChunkIndex = x.chunk.ChunkIndex,
             Score = Math.Round(x.score, 4)
-        }).ToList();
+        }).ToList() : new List<RagChunkResultDto>();
 
         return new RagResponseDto
         {
@@ -212,12 +216,11 @@ public class RagService : IRagService
             return "[Cấu hình] Chưa cài API key Groq. Vui lòng thêm Groq:ApiKey vào appsettings.json.";
 
         // ── Xây dựng mảng messages cho LLM (multi-turn) ─────────────────────
-        var systemPrompt = "Bạn là trợ lý học tập. Chỉ trả lời dựa trên tài liệu được cung cấp. " +
-            "Nếu câu trả lời không có trong 'Ngữ cảnh tài liệu' được cung cấp bên dưới, hãy trả lời chính xác là 'Tôi không tìm thấy thông tin này trong tài liệu môn học' và không tự bịa ra câu trả lời. " +
-            "BẮT BUỘC 100% dùng tiếng Việt (chữ Quốc ngữ). Nghiêm cấm dùng chữ Hán (Chinese characters) như 模, 隐藏, 暴. " +
-            "Đối với thuật ngữ chuyên ngành (như Modularity, Encapsulation...), hãy giữ nguyên tiếng Anh hoặc dịch sang tiếng Việt thuần thục " +
-            "(ví dụ: tính mô-đun hóa, tính đóng gói). " +
-            "Bạn có thể nhớ lịch sử các tin nhắn trong cuộc hội thoại để trả lời theo ngữ cảnh.";
+        var systemPrompt = "Bạn là trợ lý học tập môn học. " +
+            "1. GIAO TIẾP: Nếu người dùng chào hỏi, tán gẫu hoặc nhờ giúp đỡ chung chung (ví dụ: hi, tôi cần giúp môn này...), hãy giao tiếp thân thiện và TUYỆT ĐỐI KHÔNG dùng từ 'tài liệu' trong câu trả lời. " +
+            "2. TRẢ LỜI KIẾN THỨC: Khi người dùng thực sự hỏi về kiến thức chuyên môn, bạn CHỈ trả lời dựa trên 'Ngữ cảnh tài liệu'. Bạn BẮT BUỘC phải bắt đầu câu trả lời kiến thức bằng cụm từ 'Theo tài liệu, '. " +
+            "3. KHÔNG TÌM THẤY: Nếu ngữ cảnh tài liệu trống hoặc không chứa thông tin, BẮT BUỘC trả lời: 'Tôi không tìm thấy thông tin này trong tài liệu môn học.' " +
+            "4. NGÔN NGỮ: 100% tiếng Việt. Bạn có thể nhớ lịch sử hội thoại để trả lời.";
 
         var messages = new List<object>
         {

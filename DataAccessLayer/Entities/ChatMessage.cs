@@ -18,6 +18,8 @@ public partial class ChatMessage
     public string MessageText { get; set; } = null!;
 
     public DateTime? Timestamp { get; set; }
+    
+    public int TokenCount { get; set; }
 
     public virtual ICollection<MessageSource> MessageSources { get; set; } = new List<MessageSource>();
 
