@@ -152,17 +152,20 @@ public class ChatService : IChatService
         await _messageRepo.SaveChangesAsync();
 
         // Lưu sources (MessageSource) để trích dẫn nguồn
-        foreach (var src in sources)
+        if (sources != null)
         {
-            var ms = new MessageSource
+            foreach (var src in sources)
             {
-                MessageId = message.MessageId,
-                ChunkId = src.ChunkID,
-                RelevanceScore = src.Score
-            };
-            await _messageSourceRepo.AddAsync(ms);
+                var ms = new MessageSource
+                {
+                    MessageId = message.MessageId,
+                    ChunkId = src.ChunkID,
+                    RelevanceScore = src.Score
+                };
+                await _messageSourceRepo.AddAsync(ms);
+            }
         }
-        if (sources.Any())
+        if (sources != null && sources.Any())
             await _messageSourceRepo.SaveChangesAsync();
 
         return MapMessageToDto(message);

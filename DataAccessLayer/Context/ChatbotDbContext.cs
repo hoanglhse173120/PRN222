@@ -43,6 +43,9 @@ public class ChatbotDbContext : IdentityDbContext<IdentityUser>
         modelBuilder.Entity<BenchmarkResult>().HasKey(b => b.ResultId);
         modelBuilder.Entity<ChunkingConfig>().HasKey(c => c.Id);
 
+        modelBuilder.Entity<Package>().Property(p => p.Price).HasColumnType("decimal(18,2)");
+        modelBuilder.Entity<PaymentTransaction>().Property(p => p.Amount).HasColumnType("decimal(18,2)");
+
         // Seed default config
         modelBuilder.Entity<ChunkingConfig>().HasData(new ChunkingConfig
         {
