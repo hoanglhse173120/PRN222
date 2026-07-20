@@ -10,7 +10,7 @@
     </div>
 
     <div class="row mb-4">
-        <div class="col-md-4">
+        <div class="col-md-3">
             <div class="card text-white bg-primary mb-3 shadow-sm h-100">
                 <div class="card-header">Người dùng</div>
                 <div class="card-body">
@@ -26,7 +26,7 @@
                 </div>
             </div>
         </div>
-        <div class="col-md-4">
+        <div class="col-md-3">
             <div class="card text-white bg-success mb-3 shadow-sm h-100">
                 <div class="card-header">Tài liệu RAG</div>
                 <div class="card-body">
@@ -37,12 +37,21 @@
                 </div>
             </div>
         </div>
-        <div class="col-md-4">
+        <div class="col-md-3">
             <div class="card text-white bg-info mb-3 shadow-sm h-100">
                 <div class="card-header">Lượt Chat</div>
                 <div class="card-body">
                     <h3 class="card-title">@Model.TotalChatSessions</h3>
                     <p class="card-text">Phiên trò chuyện đã tạo</p>
+                </div>
+            </div>
+        </div>
+        <div class="col-md-3">
+            <div class="card text-white bg-danger mb-3 shadow-sm h-100">
+                <div class="card-header">Chi phí API (Ước tính)</div>
+                <div class="card-body">
+                    <h3 class="card-title" id="apiCostVal">@Model.EstimatedApiCost.ToString("N0") đ</h3>
+                    <p class="card-text mb-1">Tiêu thụ: <strong id="apiTokensVal">@Model.TotalTokensUsed.ToString("N0")</strong> Tokens</p>
                 </div>
             </div>
         </div>
@@ -175,6 +184,9 @@
             var userPoints = rawData.map(function(item) {
                 return item.ActiveUserCount;
             });
+            var tokenPoints = rawData.map(function(item) {
+                return item.TokenCount;
+            });
 
             var ctx = document.getElementById('chatStatsChart').getContext('2d');
 
@@ -213,7 +225,17 @@
                             borderColor: 'rgba(111, 66, 193, 1)',
                             backgroundColor: 'rgba(111, 66, 193, 0.85)',
                             borderWidth: 1,
-                            borderRadius: 6
+                            borderRadius: 6,
+                            hidden: true
+                        },
+                        {
+                            label: 'Tokens tiêu thụ',
+                            data: tokenPoints,
+                            borderColor: 'rgba(220, 53, 69, 1)',
+                            backgroundColor: 'rgba(220, 53, 69, 0.85)',
+                            borderWidth: 1,
+                            borderRadius: 6,
+                            yAxisID: 'y1'
                         }
                     ]
                 },
@@ -235,7 +257,14 @@
                     },
                     scales: {
                         y: {
+                            type: 'linear',
+                            display: true,
+                            position: 'left',
                             beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: 'Số lượng'
+                            },
                             grid: {
                                 borderDash: [5, 5],
                                 color: 'rgba(0, 0, 0, 0.05)',
@@ -245,6 +274,25 @@
                                 precision: 0,
                                 font: { size: 12, family: "'Inter', sans-serif" },
                                 color: '#6c757d',
+                                padding: 10
+                            }
+                        },
+                        y1: {
+                            type: 'linear',
+                            display: true,
+                            position: 'right',
+                            beginAtZero: true,
+                            title: {
+                                display: true,
+                                text: 'Tokens'
+                            },
+                            grid: {
+                                drawOnChartArea: false // only want the grid lines for one axis to show up
+                            },
+                            ticks: {
+                                precision: 0,
+                                font: { size: 12, family: "'Inter', sans-serif" },
+                                color: 'rgba(220, 53, 69, 1)',
                                 padding: 10
                             }
                         },
@@ -291,6 +339,12 @@
 
             connection.on("NewDocumentUploaded", function (data) {
                 refreshDashboard("📄", "Tài liệu mới!", "Một tài liệu mới vừa được tải lên hệ thống.", "#F59E0B", "#D97706");
+            });
+
+            connection.on("TokensConsumed", function (totalTokens, estimatedCost) {
+                document.getElementById("apiCostVal").innerText = estimatedCost.toLocaleString('vi-VN') + " đ";
+                document.getElementById("apiTokensVal").innerText = totalTokens.toLocaleString('vi-VN');
+                showToast("⚡", "API Cost Updated!", "Vừa có tin nhắn mới tiêu thụ tokens.", "#EF4444", "#B91C1C");
             });
 
             connection.start().catch(err => console.warn("SignalR Dashboard: không thể kết nối:", err));

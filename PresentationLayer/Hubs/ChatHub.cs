@@ -20,6 +20,7 @@ public class ChatHub : Hub
     private readonly IChatService _chatService;
     private readonly IRagService _ragService;
     private readonly IPaymentService _paymentService;
+    private readonly IStatisticService _statisticService;
     private readonly ChatbotDbContext _context;
     private static readonly ConcurrentDictionary<string, CancellationTokenSource> _activeGenerations = new();
 
@@ -27,11 +28,13 @@ public class ChatHub : Hub
         IChatService chatService, 
         IRagService ragService,
         IPaymentService paymentService,
+        IStatisticService statisticService,
         ChatbotDbContext context)
     {
         _chatService = chatService;
         _ragService = ragService;
         _paymentService = paymentService;
+        _statisticService = statisticService;
         _context = context;
     }
 
@@ -127,6 +130,11 @@ public class ChatHub : Hub
 
             // 9. Push kết quả về caller
             await Clients.Caller.SendAsync("StreamComplete", rendered, newSessionName, ragResult.Sources);
+
+            // 10. Gửi SignalR cho Admin update token/cost
+            var totalTokens = await _statisticService.GetTotalTokensUsedAsync();
+            var estimatedCost = (decimal)(totalTokens / 1000000.0 * 17500);
+            await Clients.All.SendAsync("TokensConsumed", totalTokens, estimatedCost);
         }
         catch (OperationCanceledException)
         {
@@ -138,6 +146,10 @@ public class ChatHub : Hub
             
             await _chatService.AddMessageAsync(sessionId, "assistant", rawAnswer);
             await Clients.Caller.SendAsync("StreamComplete", rendered, newSessionName, new List<ServiceLayer.DTOs.RagChunkResultDto>());
+
+            var totalTokens = await _statisticService.GetTotalTokensUsedAsync();
+            var estimatedCost = (decimal)(totalTokens / 1000000.0 * 17500);
+            await Clients.All.SendAsync("TokensConsumed", totalTokens, estimatedCost);
         }
         catch (Exception ex)
         {

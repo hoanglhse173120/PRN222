@@ -21,6 +21,8 @@ public class DashboardModel : PageModel
     public int TotalUsers { get; set; }
     public int TotalDocuments { get; set; }
     public int TotalChatSessions { get; set; }
+    public int TotalTokensUsed { get; set; }
+    public decimal EstimatedApiCost { get; set; }
     public double TotalDocumentSizeKb { get; set; }
     public Dictionary<string, int> UserRoleBreakdown { get; set; } = new();
     
@@ -38,6 +40,8 @@ public class DashboardModel : PageModel
         TotalUsers = await _statisticService.GetTotalUsersAsync();
         TotalDocuments = await _statisticService.GetTotalDocumentsAsync();
         TotalChatSessions = await _statisticService.GetTotalChatSessionsAsync();
+        TotalTokensUsed = await _statisticService.GetTotalTokensUsedAsync();
+        EstimatedApiCost = (decimal)(TotalTokensUsed / 1000000.0 * 17500);
         TotalDocumentSizeKb = await _statisticService.GetTotalDocumentSizeKbAsync();
         UserRoleBreakdown = await _statisticService.GetUserRoleBreakdownAsync();
         
