@@ -20,6 +20,10 @@ public class ChunkingConfigModel : PageModel
     [BindProperty]
     public ChunkingConfig Input { get; set; } = new();
 
+    /// <summary>
+    /// Khởi tạo trang: Truy xuất cấu hình Chunking hiện tại từ Database để hiển thị lên màn hình.
+    /// Nếu DB chưa có bản ghi nào, hệ thống tự động sinh một giao diện hiển thị cấu hình mặc định.
+    /// </summary>
     public async Task<IActionResult> OnGetAsync()
     {
         var configs = await _configRepo.GetAllAsync();
@@ -38,6 +42,10 @@ public class ChunkingConfigModel : PageModel
         return Page();
     }
 
+    /// <summary>
+    /// Xử lý cập nhật: Nhận dữ liệu sửa đổi từ màn hình Admin và ghi đè vào Database (cập nhật hoặc tạo mới).
+    /// Có kiểm tra tính đúng đắn của logic số lượng (ví dụ: Overlap phải nhỏ hơn Max Size).
+    /// </summary>
     public async Task<IActionResult> OnPostAsync()
     {
         if (Input.Overlap >= Input.MaxSize)

@@ -13,6 +13,12 @@ public class ChunkingService : IChunkingService
         _configRepo = configRepo;
     }
 
+    /// <summary>
+    /// Thực hiện chia nhỏ văn bản (chunking) dựa trên cấu hình được lưu trong CSDL.
+    /// Nếu chưa có cấu hình trong DB, hệ thống sẽ tự động dùng cấu hình mặc định (Words, MaxSize 500, Overlap 50).
+    /// </summary>
+    /// <param name="text">Đoạn văn bản gốc cần được chia nhỏ</param>
+    /// <returns>Danh sách các đoạn văn bản (chunks) đã được chia nhỏ</returns>
     public async Task<List<string>> ChunkTextAsync(string text)
     {
         if (string.IsNullOrWhiteSpace(text))
@@ -30,6 +36,14 @@ public class ChunkingService : IChunkingService
         };
     }
 
+    /// <summary>
+    /// Thuật toán chia nhỏ văn bản theo số lượng từ (Words).
+    /// Phân tách từ dựa trên khoảng trắng, xuống dòng, dấu tab.
+    /// </summary>
+    /// <param name="text">Văn bản cần chia</param>
+    /// <param name="maxSize">Số lượng từ tối đa phép chứa trong một chunk</param>
+    /// <param name="overlap">Số từ lặp lại giữa 2 chunk liên tục nhằm bảo toàn ngữ cảnh</param>
+    /// <returns>Danh sách các chunk đã tạo</returns>
     private List<string> ChunkByWords(string text, int maxSize, int overlap)
     {
         var words = text.Split(new[] { ' ', '\n', '\r', '\t' }, StringSplitOptions.RemoveEmptyEntries);
@@ -54,6 +68,14 @@ public class ChunkingService : IChunkingService
         return chunks;
     }
 
+    /// <summary>
+    /// Thuật toán chia nhỏ theo ký tự (Characters).
+    /// Lấy điệp khúc chính xác theo độ dài ký tự bất chấp là khoảng trắng hay chữ, có thể cắt ngang một từ.
+    /// </summary>
+    /// <param name="text">Văn bản cần chia</param>
+    /// <param name="maxSize">Số lượng ký tự tối đa trong một chunk</param>
+    /// <param name="overlap">Số ký tự giao nhau giữa 2 chunk kề nhau</param>
+    /// <returns>Danh sách các chunk</returns>
     private List<string> ChunkByCharacters(string text, int maxSize, int overlap)
     {
         var chunks = new List<string>();
@@ -77,6 +99,15 @@ public class ChunkingService : IChunkingService
         return chunks;
     }
 
+    /// <summary>
+    /// Thuật toán chia nhỏ văn bản theo từng đoạn văn (Paragraphs).
+    /// Các đoạn văn được nhận dạng và phân tách thông qua ký tự ngắt dòng (\r\n hoặc \n).
+    /// Phương pháp này giúp giữ nguyên cấu trúc logic, mạch lạc của tài liệu một cách xuất sắc.
+    /// </summary>
+    /// <param name="text">Văn bản cần chia</param>
+    /// <param name="maxSize">Số lượng đoạn văn tối đa gộp vào một chunk</param>
+    /// <param name="overlap">Số đoạn văn lặp lại ở điểm tiếp nối giữa các chunk</param>
+    /// <returns>Danh sách các chunk</returns>
     private List<string> ChunkByParagraphs(string text, int maxSize, int overlap)
     {
         var paragraphs = text.Split(new[] { "\r\n", "\n" }, StringSplitOptions.RemoveEmptyEntries)
