@@ -9,19 +9,33 @@ public class ChatbotDbContext : IdentityDbContext<IdentityUser>
 {
     public ChatbotDbContext(DbContextOptions<ChatbotDbContext> options) : base(options) { }
 
+    /// <summary> Bảng lưu trữ danh sách các môn học </summary>
     public DbSet<Subject> Subjects { get; set; }
+    /// <summary> Bảng lưu trữ các tài liệu được upload lên hệ thống </summary>
     public DbSet<Document> Documents { get; set; }
+    /// <summary> Bảng chứa các đoạn văn bản (chunks) được cắt từ tài liệu để phục vụ Vector Search (RAG) </summary>
     public DbSet<DocumentChunk> DocumentChunks { get; set; }
+    /// <summary> Bảng quản lý các phiên chat (session) của người dùng </summary>
     public DbSet<ChatSession> ChatSessions { get; set; }
+    /// <summary> Bảng lưu chi tiết từng tin nhắn nhận/gửi trong một phiên chat </summary>
     public DbSet<ChatMessage> ChatMessages { get; set; }
+    /// <summary> Bảng theo dõi các đoạn văn bản/nguồn trích dẫn được AI sử dụng để sinh câu trả lời </summary>
     public DbSet<MessageSource> MessageSources { get; set; }
+    /// <summary> Bảng lưu cấu hình thí nghiệm (Benchmark/Experiment Configs) </summary>
     public DbSet<ExperimentConfig> ExperimentConfigs { get; set; }
+    /// <summary> Bảng lưu danh sách các câu hỏi test dùng cho Benchmark </summary>
     public DbSet<TestQuestion> TestQuestions { get; set; }
+    /// <summary> Bảng lưu kết quả đánh giá (chấm điểm) của AI qua các đợt Benchmark </summary>
     public DbSet<BenchmarkResult> BenchmarkResults { get; set; }
+    /// <summary> Bảng lưu thông tin phân công môn học cho giảng viên (N-N) </summary>
     public virtual DbSet<TeacherSubject> TeacherSubjects { get; set; }
+    /// <summary> Bảng các gói dịch vụ/đăng ký trả phí (Packages) </summary>
     public DbSet<Package> Packages { get; set; }
+    /// <summary> Bảng lưu trạng thái Subscription (kích hoạt gói) của từng người dùng </summary>
     public DbSet<UserSubscription> UserSubscriptions { get; set; }
+    /// <summary> Bảng lịch sử các biên lai giao dịch thanh toán </summary>
     public DbSet<PaymentTransaction> PaymentTransactions { get; set; }
+    /// <summary> Bảng cấu hình tùy biến cơ chế chia tách văn bản (Chunking) </summary>
     public DbSet<ChunkingConfig> ChunkingConfigs { get; set; }
 
     protected override void OnModelCreating(ModelBuilder modelBuilder)
